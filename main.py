@@ -1,13 +1,11 @@
 from game_world import GameWorld
+import constants
 
 import pygame
 
-WINDOW_RESOLUTION = (800.0, 600.0)
-BLACK_CLEAR_COLOR = (0, 0, 0)
-
 def main():
     pygame.init()
-    render_target = pygame.display.set_mode(WINDOW_RESOLUTION)
+    render_target = pygame.display.set_mode(constants.WINDOW_RESOLUTION)
     clock = pygame.time.Clock()
     game_world = GameWorld(render_target)
 
@@ -17,7 +15,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        render_target.fill(BLACK_CLEAR_COLOR)
+        render_target.fill(constants.BLACK_CLEAR_COLOR)
 
         delta_time = clock.tick(60) / 1000
         game_world.update(delta_time)
