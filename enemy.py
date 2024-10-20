@@ -11,24 +11,25 @@ from pygame import Vector2, SurfaceType, Surface
 class Enemy(MovingEntity):
     def __init__( self,
                   game_world: GameWorld,
-                  radius: int = constants.DEFAULT_RADIUS,
-                  color: pygame.Color = constants.RED,
-                  max_speed: int = constants.DEFAULT_MAX_SPEED):
+                  velocity: Vector2,
+                  max_speed: float,
+                  radius: float,
+                  color: pygame.Color):
         generated_position = Generator.random_position(game_world.render_target, radius)
         generated_heading_vec = Generator.random_vec2()
         super().__init__(EntityType.eEnemy,
                          generated_position,
                          generated_heading_vec,
-                         constants.DEFAULT_VELOCITY,
-                         constants.DEFAULT_MASS,
-                         radius)
+                         velocity,
+                         radius,
+                         constants.DEFAULT_MASS)
         self.game_world = game_world
         self.color = color
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
 
     def update(self, delta_time: float):
-        steering_force: Vector2 = self.steering_behaviours.calculate_resultant_force()
+        steering_force: Vector2 = self.steering_behaviours.seek(self.game_world.player.position)
         acceleration: Vector2 = steering_force / self.mass
 
         self.velocity += acceleration * delta_time

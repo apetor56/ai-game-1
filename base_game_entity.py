@@ -15,7 +15,7 @@ class BaseGameEntity:
     def __init__(self,
                  entity_type: EntityType,
                  position: Vector2,
-                 radius: int):
+                 radius: float):
         self.id = BaseGameEntity.next_valid_id()
         self.type = entity_type
         self.tag = False

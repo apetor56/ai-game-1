@@ -10,8 +10,8 @@ class MovingEntity(BaseGameEntity):
                  position: Vector2,
                  velocity: Vector2,
                  heading_vec: Vector2,
-                 mass: float,
-                 radius: int):
+                 radius: float,
+                 mass: float):
         super().__init__(entity_type,
                          position,
                          radius)

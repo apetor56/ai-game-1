@@ -4,7 +4,7 @@ import random
 
 class Generator:
     @staticmethod
-    def random_position(render_target: SurfaceType, radius: int):
+    def random_position(render_target: SurfaceType, radius: float):
         width, height = render_target.get_size()
         x: float = random.uniform(radius, width - radius)
         y: float = random.uniform(radius, height - radius)

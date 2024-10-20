@@ -18,6 +18,7 @@ def main():
         render_target.fill(constants.BLACK_CLEAR_COLOR)
 
         delta_time = clock.tick(60) / 1000
+        game_world.process_input()
         game_world.update(delta_time)
         game_world.render(render_target)
 
