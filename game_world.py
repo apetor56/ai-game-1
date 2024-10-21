@@ -27,10 +27,28 @@ class GameWorld:
 
     def update(self, delta_time: float):
         self.player.update(delta_time)
+        self.wrap_around_screen(self.player)
         for enemy in self.enemies:
             enemy.update(delta_time)
+            self.wrap_around_screen(enemy)
 
     def render(self, render_target: Surface | SurfaceType):
         self.player.render(render_target)
         for enemy in self.enemies:
             enemy.render(render_target)
+
+    def wrap_around_screen(self, entity):
+        """Wraps the entity around the screen when it moves beyond the boundaries."""
+        screen_width, screen_height = constants.WINDOW_RESOLUTION
+
+        # Wrap horizontally
+        if entity.position.x < 0:
+            entity.position.x = screen_width
+        elif entity.position.x > screen_width:
+            entity.position.x = 0
+
+        # Wrap vertically
+        if entity.position.y < 0:
+            entity.position.y = screen_height
+        elif entity.position.y > screen_height:
+            entity.position.y = 0

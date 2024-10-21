@@ -29,7 +29,9 @@ class Enemy(MovingEntity):
         self.max_speed = max_speed
 
     def update(self, delta_time: float):
-        steering_force: Vector2 = self.steering_behaviours.seek(self.game_world.player.position)
+        # steering_force: Vector2 = self.steering_behaviours.seek(self.game_world.player.position)
+        target_position = self.game_world.player.position
+        steering_force: Vector2 = self.steering_behaviours.arrive(target_position, constants.Deceleration.SLOW)
         acceleration: Vector2 = steering_force / self.mass
 
         self.velocity += acceleration * delta_time

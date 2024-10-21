@@ -21,3 +21,9 @@ DEFAULT_SCALE = Vector2(1.0, 1.0)
 
 ALPHA: float = 1e-6
 CLOCKWISE_ROTATION: float = 90.0
+
+class Deceleration:
+    #speed of arrive
+    SLOW = 3.0
+    NORMAL = 2.0
+    FAST = 1.0
