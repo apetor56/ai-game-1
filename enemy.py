@@ -40,7 +40,10 @@ class Enemy(MovingEntity):
        # steering_force: Vector2 = self.steering_behaviours.arrive(target_position, constants.Deceleration.SLOW)
 
         #---Pursuit
-        steering_force: Vector2 = self.steering_behaviours.pursuit(self.game_world.player)
+        #steering_force: Vector2 = self.steering_behaviours.pursuit(self.game_world.player)
+
+        #---Evade
+        steering_force: Vector2 = self.steering_behaviours.evade(self.game_world.player)
 
         acceleration: Vector2 = steering_force / self.mass
 

@@ -58,5 +58,24 @@ class SteeringBehaviours:
 
         # Predict where the evader will be in the future and pursue that predicted position
         look_ahead_time = to_evader.length() / (self.agent.max_speed + evader.velocity.length())
+        look_ahead_time += self.turn_around_time(evader.position)
         future_position = evader.position + evader.velocity * look_ahead_time
         return self.seek(future_position)
+
+    def turn_around_time(self, target_pos: Vector2) -> float:
+        """
+        Calculates the time required for the agent to turn around to face the target.
+        This is based on the dot product between the agent's heading and the target's direction.
+        """
+        to_target = (target_pos - self.agent.position).normalize()
+        dot = self.agent.heading_vec.dot(to_target)
+        coefficient = 0.1
+
+        return (dot - 1.0) * -coefficient
+
+    def evade(self, pursuer):
+        to_pursuer = pursuer.position - self.agent.position
+        look_ahead_time = to_pursuer.length() / (self.agent.max_speed + pursuer.velocity.length())
+        future_position = pursuer.position + pursuer.velocity * look_ahead_time
+
+        return self.flee(future_position)
