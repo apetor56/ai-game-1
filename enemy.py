@@ -43,7 +43,10 @@ class Enemy(MovingEntity):
         #steering_force: Vector2 = self.steering_behaviours.pursuit(self.game_world.player)
 
         #---Evade
-        steering_force: Vector2 = self.steering_behaviours.evade(self.game_world.player)
+        #steering_force: Vector2 = self.steering_behaviours.evade(self.game_world.player)
+
+        # ---Wander
+        steering_force: Vector2 = self.steering_behaviours.wander()
 
         acceleration: Vector2 = steering_force / self.mass
 
@@ -58,4 +61,21 @@ class Enemy(MovingEntity):
         self.position += self.velocity * delta_time
 
     def render(self, render_target : SurfaceType | Surface):
+        #enemy
         pygame.draw.circle(render_target, self.color, self.position, self.radius)
+
+
+        # circle of Wander
+        wander_center = self.position + self.heading_vec * self.steering_behaviours.wander_distance
+
+
+        pygame.draw.circle(render_target, (0, 255, 0), (int(wander_center.x),
+                                                                    int(wander_center.y)),
+                                                                    int(self.steering_behaviours.wander_radius), 1)
+
+        wander_target_world = self.steering_behaviours.point_to_world_space(self.steering_behaviours.wander_target,
+                                                                            self.heading_vec,
+                                                                            self.side_vec,
+                                                                            wander_center)
+
+        pygame.draw.circle(render_target, (255, 255, 255), (int(wander_target_world.x), int(wander_target_world.y)), 5)

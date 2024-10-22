@@ -27,28 +27,32 @@ class GameWorld:
 
     def update(self, delta_time: float):
         self.player.update(delta_time)
-        self.wrap_around_screen(self.player)
+        self.handle_wall_collisions(self.player)
         for enemy in self.enemies:
             enemy.update(delta_time)
-            self.wrap_around_screen(enemy)
+            self.handle_wall_collisions(enemy)
 
     def render(self, render_target: Surface | SurfaceType):
         self.player.render(render_target)
         for enemy in self.enemies:
             enemy.render(render_target)
 
-    def wrap_around_screen(self, entity):
-        """Wraps the entity around the screen when it moves beyond the boundaries."""
+    def handle_wall_collisions(self, entity):
+        """Handles wall collisions by bouncing the entity off the screen edges."""
         screen_width, screen_height = constants.WINDOW_RESOLUTION
 
-        # Wrap horizontally
-        if entity.position.x < 0:
-            entity.position.x = screen_width
-        elif entity.position.x > screen_width:
-            entity.position.x = 0
+        # Check for collisions with the left and right walls
+        if entity.position.x - entity.radius < 0:
+            entity.position.x = entity.radius  # Correct position
+            entity.velocity.x *= -1  # Invert velocity (bounce off wall)
+        elif entity.position.x + entity.radius > screen_width:
+            entity.position.x = screen_width - entity.radius
+            entity.velocity.x *= -1
 
-        # Wrap vertically
-        if entity.position.y < 0:
-            entity.position.y = screen_height
-        elif entity.position.y > screen_height:
-            entity.position.y = 0
+        # Check for collisions with the top and bottom walls
+        if entity.position.y - entity.radius < 0:
+            entity.position.y = entity.radius
+            entity.velocity.y *= -1
+        elif entity.position.y + entity.radius > screen_height:
+            entity.position.y = screen_height - entity.radius
+            entity.velocity.y *= -1

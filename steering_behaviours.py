@@ -1,8 +1,13 @@
 from pygame import Vector2
+import random
 
 class SteeringBehaviours:
     def __init__(self, enemy):
         self.agent = enemy
+        self.wander_radius = 10
+        self.wander_distance = 60
+        self.wander_jitter = 3
+        self.wander_target = Vector2(self.wander_radius, 0)
 
     def calculate_resultant_force(self):
         pass
@@ -79,3 +84,27 @@ class SteeringBehaviours:
         future_position = pursuer.position + pursuer.velocity * look_ahead_time
 
         return self.flee(future_position)
+
+    def wander(self):
+        self.wander_target += Vector2(random.uniform(-1, 1) * self.wander_jitter,
+                                      random.uniform(-1, 1) * self.wander_jitter)
+
+        self.wander_target = self.wander_target.normalize() * self.wander_radius
+
+        target_local = self.wander_target + Vector2(self.wander_distance, 0)
+
+        # Convert local target to world space using agent's heading
+        target_world = self.point_to_world_space(target_local,
+                                                 self.agent.heading_vec,
+                                                 self.agent.side_vec,
+                                                 self.agent.position)
+
+        # Return the steering force towards the wander target
+        return target_world - self.agent.position
+
+    def point_to_world_space(self, local_point: Vector2, heading: Vector2, side: Vector2, position: Vector2) -> Vector2:
+        # Transform the local point to world space (apply rotation and translation)
+        transformed_point = Vector2()
+        transformed_point.x = (local_point.x * heading.x) + (local_point.y * side.x) + position.x
+        transformed_point.y = (local_point.x * heading.y) + (local_point.y * side.y) + position.y
+        return transformed_point
