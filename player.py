@@ -27,10 +27,11 @@ class Player(MovingEntity):
         self.color = color
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
-        self.vertices = self.get_triangle_vertices()
+        #self.vertices = self.get_triangle_vertices()
         self.rotation = 0.0
         self.rotation_speed = 180.0
         self.movement_vec = Vector2(0.0, 0.0)
+        self.front = Vector2(0.0, -self.radius)
 
     def process_input(self):
         self.clear_previous_inputs()
@@ -49,16 +50,15 @@ class Player(MovingEntity):
 
     def render(self, render_target : SurfaceType | Surface):
         pygame.draw.circle(render_target, self.color, self.position, self.radius, width = 1)
-        pygame.draw.polygon(render_target, constants.GREEN, self.vertices)
+        pygame.draw.polygon(render_target, constants.GREEN, self.get_triangle_vertices())
 
     def update_rotation(self, delta_time: float):
         if self.rotation != 0:
             self.heading_vec = self.heading_vec.rotate(self.rotation * delta_time).normalize()
+            translated_vertex = self.front
 
-            for index in range(len(self.vertices)):
-                translated_vertex = self.vertices[index] - self.position
-                rotated_vertex = translated_vertex.rotate(self.rotation * delta_time)
-                self.vertices[index] = rotated_vertex + self.position
+            rotated_vertex = translated_vertex.rotate(self.rotation * delta_time)
+            self.front = rotated_vertex
 
     def update_movement(self, delta_time: float):
         if self.movement_vec != Vector2(0.0, 0.0):
@@ -70,16 +70,14 @@ class Player(MovingEntity):
                 self.velocity.scale_to_length(constants.DEFAULT_PLAYER_MAX_SPEED)
 
             self.position += self.velocity * delta_time
-            for vertexPosition in self.vertices:
-                vertexPosition += self.velocity * delta_time
+            self.vertices = self.get_triangle_vertices()
 
     def clear_previous_inputs(self):
         self.rotation = 0.0
         self.movement_vec = Vector2(0.0, 0.0)
 
     def get_triangle_vertices(self):
-        front = Vector2(0, -self.radius)
-        left = front.rotate(120)
-        right = front.rotate(240)
+        left = self.front.rotate(120)
+        right = self.front.rotate(240)
 
-        return [front + self.position, left + self.position, right + self.position]
+        return [self.front + self.position, left + self.position, right + self.position]

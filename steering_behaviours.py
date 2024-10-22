@@ -4,9 +4,9 @@ import random
 class SteeringBehaviours:
     def __init__(self, enemy):
         self.agent = enemy
-        self.wander_radius = 10
-        self.wander_distance = 60
-        self.wander_jitter = 3
+        self.wander_radius = 1
+        self.wander_distance = 1
+        self.wander_jitter = 1
         self.wander_target = Vector2(self.wander_radius, 0)
 
     def calculate_resultant_force(self):
