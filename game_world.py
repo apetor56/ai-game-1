@@ -1,6 +1,7 @@
 import constants
 
-from pygame import Surface, SurfaceType
+from pygame import Surface, SurfaceType, Vector2
+from Obstacle import Obstacle
 
 class GameWorld:
     def __init__(self,
@@ -22,6 +23,19 @@ class GameWorld:
                              constants.DEFAULT_PLAYER_RADIUS,
                              constants.GREEN)
 
+        self.obstacles = []
+        self.generate_obstacles()
+
+    def generate_obstacles(self):
+
+        obstacle_positions = [
+            Vector2(200, 150),
+            Vector2(600, 150),
+            Vector2(600, 450)
+        ]
+        for pos in obstacle_positions:
+            self.obstacles.append(Obstacle(pos, radius=60, color=constants.GRAY))
+
     def process_input(self):
         self.player.process_input()
 
@@ -36,6 +50,8 @@ class GameWorld:
         self.player.render(render_target)
         for enemy in self.enemies:
             enemy.render(render_target)
+        for obstacle in self.obstacles:
+            obstacle.render(render_target)
 
     def handle_wall_collisions(self, entity):
         """Handles wall collisions by bouncing the entity off the screen edges."""
