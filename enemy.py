@@ -28,26 +28,8 @@ class Enemy(MovingEntity):
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
 
-    def update(self, delta_time: float):
-        #---Seek
-        #steering_force: Vector2 = self.steering_behaviours.seek(self.game_world.player.position)
-
-        #---Flee
-        #steering_force: Vector2 = self.steering_behaviours.flee(self.game_world.player.position)
-
-        # ---Arrive
-        #target_position = self.game_world.player.position
-       # steering_force: Vector2 = self.steering_behaviours.arrive(target_position, constants.Deceleration.SLOW)
-
-        #---Pursuit
-        #steering_force: Vector2 = self.steering_behaviours.pursuit(self.game_world.player)
-
-        #---Evade
-        #steering_force: Vector2 = self.steering_behaviours.evade(self.game_world.player)
-
-        # ---Wander
-        steering_force: Vector2 = self.steering_behaviours.wander()
-
+    def update(self, delta_time):
+        steering_force: Vector2 = self.steering_behaviours.calculate_steering_force()
         acceleration: Vector2 = steering_force / self.mass
 
         self.velocity += acceleration * delta_time
@@ -61,21 +43,4 @@ class Enemy(MovingEntity):
         self.position += self.velocity * delta_time
 
     def render(self, render_target : SurfaceType | Surface):
-        #enemy
         pygame.draw.circle(render_target, self.color, self.position, self.radius)
-
-
-        # circle of Wander
-        wander_center = self.position + self.heading_vec * self.steering_behaviours.wander_distance
-
-
-        pygame.draw.circle(render_target, (0, 255, 0), (int(wander_center.x),
-                                                                    int(wander_center.y)),
-                                                                    int(self.steering_behaviours.wander_radius), 1)
-
-        wander_target_world = self.steering_behaviours.point_to_world_space(self.steering_behaviours.wander_target,
-                                                                            self.heading_vec,
-                                                                            self.side_vec,
-                                                                            wander_center)
-
-        pygame.draw.circle(render_target, (255, 255, 255), (int(wander_target_world.x), int(wander_target_world.y)), 5)

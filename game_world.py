@@ -42,10 +42,11 @@ class GameWorld:
     def update(self, delta_time: float):
         self.player.update(delta_time)
         self.handle_wall_collisions(self.player)
-        self.handle_entity_collisions()
+
         for enemy in self.enemies:
             enemy.update(delta_time)
-            self.handle_wall_collisions(enemy)
+
+        self.handle_entity_collisions()
 
     def render(self, render_target: Surface | SurfaceType):
         self.player.render(render_target)
