@@ -28,3 +28,5 @@ class Deceleration:
     SLOW = 3.0
     NORMAL = 2.0
     FAST = 1.0
+
+RESTITUTION_COEFFICIENT = 0.8
