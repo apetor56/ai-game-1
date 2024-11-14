@@ -7,7 +7,8 @@ from enum import Enum
 class EntityType(Enum):
     eDefault = -1
     ePlayer = 0
-    eEnemy = 1
+    eEnemy = 1,
+    eObstacle = 2
 
 class BaseGameEntity:
     latest_id = 0
@@ -19,7 +20,7 @@ class BaseGameEntity:
         self.id = BaseGameEntity.next_valid_id()
         self.type = entity_type
         self.tag = False
-        self.position = position
+        self.position = Vector2(position.x, constants.WINDOW_RESOLUTION[1] - position.y)
         self.scale = constants.DEFAULT_SCALE
         self.radius = radius
 
@@ -27,3 +28,6 @@ class BaseGameEntity:
     def next_valid_id():
         BaseGameEntity.latest_id += 1
         return BaseGameEntity.latest_id
+
+    def get_render_position(self):
+        return Vector2(self.position.x, constants.WINDOW_RESOLUTION[1] - self.position.y)

@@ -1,7 +1,7 @@
 import constants
 
 from pygame import Surface, SurfaceType, Vector2
-from Obstacle import Obstacle
+from obstacle import Obstacle
 
 class GameWorld:
     def __init__(self,
@@ -18,7 +18,7 @@ class GameWorld:
                                       constants.RED))
         from player import Player
         self.player = Player(self,
-                             constants.DEFAULT_PLAYER_VELOCITY,
+                             Vector2(),
                              constants.DEFAULT_PLAYER_MAX_SPEED,
                              constants.DEFAULT_PLAYER_RADIUS,
                              constants.GREEN)
@@ -29,6 +29,7 @@ class GameWorld:
     def generate_obstacles(self):
 
         obstacle_positions = [
+            Vector2(400, 300),
             Vector2(200, 150),
             Vector2(600, 150),
             Vector2(600, 450)
@@ -46,7 +47,7 @@ class GameWorld:
         for enemy in self.enemies:
             enemy.update(delta_time)
 
-        self.handle_entity_collisions()
+        # self.handle_entity_collisions()
 
     def render(self, render_target: Surface | SurfaceType):
         self.player.render(render_target)
@@ -89,23 +90,23 @@ class GameWorld:
                 self.handle_circle_collision(self.enemies[i], self.enemies[j])
 
     def handle_circle_collision(self, entity1, entity2, stationary=False):
-        distance = entity1.position.distance_to(entity2.position)
+        distance = entity1.get_render_position().distance_to(entity2.get_render_position())
         min_distance = entity1.radius + entity2.radius
 
         if distance < min_distance:
             overlap = min_distance - distance
-            collision_normal = (entity2.position - entity1.position).normalize()
-
+            collision_normal = (entity2.get_render_position() - entity1.get_render_position()).normalize()
+            fixed_collision_normal = Vector2(collision_normal.x, -collision_normal.y)
             if stationary:
-                entity1.position -= collision_normal * overlap
+                entity1.position -= fixed_collision_normal * overlap
             else:
-                entity1.position -= collision_normal * (overlap / 2)
-                entity2.position += collision_normal * (overlap / 2)
+                entity1.position -= fixed_collision_normal * (overlap / 2)
+                entity2.position += fixed_collision_normal * (overlap / 2)
 
             if not stationary and hasattr(entity1, 'velocity') and hasattr(entity2, 'velocity'):
-                self.resolve_velocity(entity1, entity2, collision_normal)
+                self.resolve_velocity(entity1, entity2, fixed_collision_normal)
             elif stationary and hasattr(entity1, 'velocity'):
-                self.resolve_velocity_against_stationary(entity1, collision_normal)
+                self.resolve_velocity_against_stationary(entity1, fixed_collision_normal)
 
     @staticmethod
     def resolve_velocity(entity1, entity2, collision_normal):
@@ -133,3 +134,10 @@ class GameWorld:
 
         restitution = constants.RESTITUTION_COEFFICIENT
         entity.velocity -= (1 + restitution) * velocity_along_normal * collision_normal
+
+    def tag_obstacles_within_view_range(self, enemy, box_length):
+        for obstacle in self.obstacles:
+            if box_length + obstacle.radius < (enemy.position - obstacle.get_render_position()).length():
+                obstacle.in_range_tag = False
+            else:
+                obstacle.in_range_tag = True

@@ -1,37 +1,55 @@
+from obstacle import Obstacle
+from utils import Utils
+import constants
+
 from pygame import Vector2
 import random
 
-import constants
+import math
 
 class SteeringBehaviours:
     def __init__(self, enemy):
         self.agent = enemy
         self.wander_radius = 20
+        self.wander_jitter_per_sec = 80
         self.wander_distance = 30
-        self.wander_jitter = 1
-        self.wander_target = Vector2(self.wander_radius, 0)
+        self.wander_jitter = self.wander_jitter_per_sec
+        self.wander_target = Vector2(self.wander_jitter_per_sec, 0)
+        self.max_force_length = 1000
+        self.min_detection_box_length = 300
+        self.box_length = 0
+        self.wall_detection_feeler_length = 50
+        self.accumulated_steering_force = Vector2()
         self.wander_weight = 1.0
-        self.obstacle_avoidance_weight = 0.1
-        self.wall_avoidance_weight = 0.2
-        self.max_force = 1500.0
+        self.obstacle_avoidance_weight = 10.0
+        self.wall_avoidance_weight = 10.0
 
     def calculate_steering_force(self):
-        from enemy import Enemy
-        self.reset_weights()
+        self.accumulated_steering_force = Vector2()
 
-        avoid_obstacle = self.avoid_obstacles(self.agent.game_world.obstacles) if isinstance(self.agent,
-                                                                                             Enemy) else Vector2(0, 0)
-        wander = self.wander()
-        avoid_wall = self.avoid_walls() * self.wall_avoidance_weight
+        self.manage_force(self.obstacle_avoidance() * self.obstacle_avoidance_weight)
+        self.manage_force(self.wander() * self.wander_weight)
 
-        steering_force = (wander * self.wander_weight +
-                          avoid_obstacle * self.obstacle_avoidance_weight +
-                          avoid_wall * self.wall_avoidance_weight)
+        return self.accumulated_steering_force
 
-        if steering_force.length() > self.max_force:
-            steering_force.scale_to_length(self.max_force)
+    def manage_force(self, single_force):
+        if not self.accumulate_force(single_force):
+            return self.accumulated_steering_force
 
-        return steering_force
+    def accumulate_force(self, single_force):
+        current_force_length = self.accumulated_steering_force.length()
+        remaining_length = self.max_force_length - current_force_length
+
+        if remaining_length < 0.0:
+            return False
+
+        length_to_add = single_force.length()
+        if length_to_add < remaining_length:
+            self.accumulated_steering_force += single_force
+        else:
+            self.accumulated_steering_force += single_force.normalize() * remaining_length
+
+        return True
 
     def seek(self, target: Vector2):
         desired_velocity = (target - self.agent.position).normalize() * self.agent.max_speed
@@ -64,7 +82,7 @@ class SteeringBehaviours:
         to_evader = evader.position - self.agent.position
         relative_heading = self.agent.heading_vec.dot(evader.heading_vec)
 
-        if (to_evader.dot(self.agent.heading_vec) > 0) and (relative_heading < -0.95):  # acos(0.95) ~ 18 degrees
+        if (to_evader.dot(self.agent.heading_vec) > 0) and (relative_heading < -0.95):
             return self.seek(evader.position)
 
         look_ahead_time = to_evader.length() / (self.agent.max_speed + evader.velocity.length())
@@ -85,64 +103,51 @@ class SteeringBehaviours:
         return self.flee(future_position)
 
     def wander(self):
-        self.wander_target += Vector2(random.uniform(-1, 1) * self.wander_jitter,
-                                      random.uniform(-1, 1) * self.wander_jitter)
+        jitter_this_time_slice = self.wander_jitter * self.agent.delta_time
+        self.wander_target += Vector2(random.uniform(-1, 1) * jitter_this_time_slice,
+                                      random.uniform(-1, 1) * jitter_this_time_slice)
         self.wander_target = self.wander_target.normalize() * self.wander_radius
         target_local = self.wander_target + Vector2(self.wander_distance, 0)
-        target_world = self.point_to_world_space(target_local,
+        target_world = Utils.point_to_world_space(target_local,
                                                  self.agent.heading_vec,
                                                  self.agent.side_vec,
                                                  self.agent.position)
         return target_world - self.agent.position
 
-    def point_to_world_space(self, local_point: Vector2, heading: Vector2, side: Vector2, position: Vector2) -> Vector2:
-        transformed_point = Vector2()
-        transformed_point.x = (local_point.x * heading.x) + (local_point.y * side.x) + position.x
-        transformed_point.y = (local_point.x * heading.y) + (local_point.y * side.y) + position.y
-        return transformed_point
+    def obstacle_avoidance(self):
+        self.box_length = self.min_detection_box_length + (self.agent.velocity.length() / self.agent.max_speed) * self.min_detection_box_length
+        self.agent.game_world.tag_obstacles_within_view_range(self.agent, self.box_length)
 
-    def avoid_obstacles(self, obstacles, detection_range = 150):
-        from enemy import Enemy
-        avoidance_force = Vector2(0, 0)
+        closest_intersecting_obstacle = None
+        distance_to_closest_intersection_point = float('inf')
+        closest_obstacle_local_position = Vector2()
 
-        if isinstance(self.agent, Enemy):
-            for obstacle in obstacles:
-                distance = self.agent.position.distance_to(obstacle.position)
+        for obstacle in self.agent.game_world.obstacles:
+            if obstacle.in_range_tag:
+                local_pos = Utils.point_to_local_space(obstacle.get_render_position(), self.agent.heading_vec, self.agent.side_vec, self.agent.position)
+                if local_pos.x >= 0:
+                    expanded_radius = obstacle.radius + self.agent.radius
+                    if abs(local_pos.y) < expanded_radius:
+                        x = local_pos.x
+                        y = local_pos.y
+                        sqrt_part = math.sqrt(expanded_radius ** 2 - y ** 2)
+                        intersection_point_x = x - sqrt_part
+                        if intersection_point_x <= 0:
+                            intersection_point_x = x + sqrt_part
 
-                if distance < detection_range + obstacle.radius:
-                    self.obstacle_avoidance_weight = 3.5
-                    away_from_obstacle = (self.agent.position - obstacle.position).normalize()
+                        if intersection_point_x < distance_to_closest_intersection_point:
+                            distance_to_closest_intersection_point = intersection_point_x
+                            closest_intersecting_obstacle = obstacle
+                            closest_obstacle_local_position = local_pos
 
-                    strength = (detection_range + obstacle.radius - distance) / detection_range
-                    avoidance_force += away_from_obstacle * strength * self.agent.max_speed
+        steering_force = Vector2()
+        if isinstance(closest_intersecting_obstacle, Obstacle):
+            closest_intersecting_obstacle.color = constants.RED
 
-            return avoidance_force
+            multiplier = 1.0 + (self.box_length - closest_obstacle_local_position.x) / self.box_length
+            steering_force.y = (closest_intersecting_obstacle.radius - closest_obstacle_local_position.y) * multiplier
 
-    def avoid_walls(self, detection_range = 50):
-        avoidance_force = Vector2(0, 0)
+            braking_weight = 0.2
+            steering_force.x = (closest_intersecting_obstacle.radius - closest_obstacle_local_position.x) * braking_weight
 
-        left_distance = self.agent.position.x
-        right_distance = constants.WINDOW_RESOLUTION[0] - self.agent.position.x
-        top_distance = self.agent.position.y
-        bottom_distance = constants.WINDOW_RESOLUTION[1] - self.agent.position.y
-
-        if left_distance < detection_range:
-            avoidance_force.x += (detection_range - left_distance)
-        if right_distance < detection_range:
-            avoidance_force.x -= (detection_range - right_distance)
-        if top_distance < detection_range:
-            avoidance_force.y += (detection_range - top_distance)
-        if bottom_distance < detection_range:
-            avoidance_force.y -= (detection_range - bottom_distance)
-
-        if avoidance_force.length() > 0:
-            self.wall_avoidance_weight = 9.0
-            from enemy import Enemy
-            avoidance_force = avoidance_force.normalize() * self.agent.max_speed
-
-        return avoidance_force
-
-    def reset_weights(self):
-        self.wander_weight = 1.0
-        self.obstacle_avoidance_weight = 0.05
-        self.wall_avoidance_weight = 0.05
+        return Utils.point_to_world_space(steering_force, self.agent.heading_vec, self.agent.side_vec, self.agent.position)

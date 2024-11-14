@@ -4,6 +4,9 @@ import constants
 
 from pygame import Vector2
 
+from generator import Generator
+
+
 class MovingEntity(BaseGameEntity):
     def __init__(self,
                  entity_type: EntityType,
@@ -16,6 +19,9 @@ class MovingEntity(BaseGameEntity):
                          position,
                          radius)
         self.velocity = velocity
-        self.heading_vec = heading_vec
-        self.side_vec = self.heading_vec.rotate(constants.CLOCKWISE_ROTATION)
+        if heading_vec != Vector2(0, 0):
+            self.heading_vec = heading_vec
+        else:
+            self.heading_vec = Generator.random_vec2()
+        self.side_vec = self.heading_vec.rotate(constants.COUNTERCLOCKWISE_ROTATION)
         self.mass = mass

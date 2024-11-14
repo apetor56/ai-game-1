@@ -1,3 +1,5 @@
+import math
+
 from game_world import GameWorld
 from moving_entity import MovingEntity
 from base_game_entity import EntityType
@@ -27,7 +29,6 @@ class Player(MovingEntity):
         self.color = color
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
-        #self.vertices = self.get_triangle_vertices()
         self.rotation = 0.0
         self.rotation_speed = 180.0
         self.movement_vec = Vector2(0.0, 0.0)
@@ -42,19 +43,20 @@ class Player(MovingEntity):
         if keys[pygame.K_e]:
             self.rotation = self.rotation_speed
         if keys[pygame.K_w]:
-            self.movement_vec += Vector2(0.0, -self.max_speed)
+            self.movement_vec += Vector2(0.0, self.max_speed)
 
     def update(self, delta_time):
         self.update_rotation(delta_time)
         self.update_movement(delta_time)
 
     def render(self, render_target : SurfaceType | Surface):
-        pygame.draw.circle(render_target, self.color, self.position, self.radius, width = 1)
+        pygame.draw.circle(render_target, self.color, self.get_render_position(), self.radius, width = 1)
         pygame.draw.polygon(render_target, constants.GREEN, self.get_triangle_vertices())
 
     def update_rotation(self, delta_time: float):
         if self.rotation != 0:
-            self.heading_vec = self.heading_vec.rotate(self.rotation * delta_time).normalize()
+            self.heading_vec = self.heading_vec.rotate(-self.rotation * delta_time).normalize()
+            self.side_vec = self.heading_vec.rotate(constants.COUNTERCLOCKWISE_ROTATION)
             translated_vertex = self.front
 
             rotated_vertex = translated_vertex.rotate(self.rotation * delta_time)
@@ -80,4 +82,4 @@ class Player(MovingEntity):
         left = self.front.rotate(120)
         right = self.front.rotate(240)
 
-        return [self.front + self.position, left + self.position, right + self.position]
+        return [self.front + self.get_render_position(), left + self.get_render_position(), right + self.get_render_position()]
