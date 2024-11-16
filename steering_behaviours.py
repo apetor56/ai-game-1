@@ -1,3 +1,4 @@
+from math import inf
 from pygame import Vector2
 import random
 
@@ -108,3 +109,37 @@ class SteeringBehaviours:
         transformed_point.x = (local_point.x * heading.x) + (local_point.y * side.x) + position.x
         transformed_point.y = (local_point.x * heading.y) + (local_point.y * side.y) + position.y
         return transformed_point
+
+
+
+#Hiding
+    def get_hiding_position(self, pos_ob: Vector2, radius_ob: float, pos_target: Vector2) -> Vector2:
+        distance_from_boundary = 30.0
+        dist_away = radius_ob + distance_from_boundary
+
+        to_ob = (pos_ob - pos_target).normalize()
+        hiding_position = to_ob * dist_away + pos_ob
+        return hiding_position
+
+    def hide(self, target, obstacles):
+        dist_to_closest = inf
+        best_hiding_spot = None
+
+        for obstacle in obstacles:
+            hiding_spot = self.get_hiding_position(obstacle.position, obstacle.radius, target.position)
+
+            dist = (hiding_spot - self.agent.position).length_squared()
+
+            if dist < dist_to_closest:
+                dist_to_closest = dist
+                best_hiding_spot = hiding_spot
+
+        if best_hiding_spot is None:
+            return self.evade(target)
+
+        return self.arrive(best_hiding_spot,
+                           deceleration=1.0)
+
+
+#Flocking
+

@@ -1,7 +1,7 @@
 import constants
 
 from pygame import Surface, SurfaceType, Vector2
-from Obstacle import Obstacle
+from obstacle import Obstacle
 
 class GameWorld:
     def __init__(self,

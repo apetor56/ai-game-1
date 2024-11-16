@@ -1,3 +1,4 @@
+import time
 from game_world import GameWorld
 from moving_entity import MovingEntity
 from base_game_entity import EntityType
@@ -28,7 +29,12 @@ class Enemy(MovingEntity):
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
 
+
     def update(self, delta_time: float):
+        target = self.game_world.player
+        obstacles = self.game_world.obstacles
+
+
         #---Seek
         #steering_force: Vector2 = self.steering_behaviours.seek(self.game_world.player.position)
 
@@ -46,7 +52,19 @@ class Enemy(MovingEntity):
         #steering_force: Vector2 = self.steering_behaviours.evade(self.game_world.player)
 
         # ---Wander
-        steering_force: Vector2 = self.steering_behaviours.wander()
+
+
+        self.position += self.velocity * delta_time
+
+        #Hide
+        to_enemy_from_player = self.position - target.position
+        is_in_player_fov = target.heading_vec.dot(to_enemy_from_player.normalize()) > 0.5  # cos(45 degrees)
+
+        should_hide = is_in_player_fov
+
+        if should_hide:
+            steering_force = self.steering_behaviours.hide(target, obstacles)
+        else: steering_force: Vector2 = self.steering_behaviours.wander()
 
         acceleration: Vector2 = steering_force / self.mass
 
@@ -58,24 +76,23 @@ class Enemy(MovingEntity):
             self.heading_vec = self.velocity.normalize()
             self.side_vec = self.heading_vec.rotate(constants.CLOCKWISE_ROTATION)
 
-        self.position += self.velocity * delta_time
 
     def render(self, render_target : SurfaceType | Surface):
         #enemy
-        pygame.draw.circle(render_target, self.color, self.position, self.radius)
+       pygame.draw.circle(render_target, self.color, self.position, self.radius)
 
 
         # circle of Wander
-        wander_center = self.position + self.heading_vec * self.steering_behaviours.wander_distance
+       # wander_center = self.position + self.heading_vec * self.steering_behaviours.wander_distance
 
 
-        pygame.draw.circle(render_target, (0, 255, 0), (int(wander_center.x),
-                                                                    int(wander_center.y)),
-                                                                    int(self.steering_behaviours.wander_radius), 1)
+       # pygame.draw.circle(render_target, (0, 255, 0), (int(wander_center.x),
+        #                                                            int(wander_center.y)),
+         #                                                           int(self.steering_behaviours.wander_radius), 1)
 
-        wander_target_world = self.steering_behaviours.point_to_world_space(self.steering_behaviours.wander_target,
-                                                                            self.heading_vec,
-                                                                            self.side_vec,
-                                                                            wander_center)
+       # wander_target_world = self.steering_behaviours.point_to_world_space(self.steering_behaviours.wander_target,
+                                                                        #    self.heading_vec,
+                                                                         #   self.side_vec,
+                                                                          #  wander_center)
 
-        pygame.draw.circle(render_target, (255, 255, 255), (int(wander_target_world.x), int(wander_target_world.y)), 5)
+       # pygame.draw.circle(render_target, (255, 255, 255), (int(wander_target_world.x), int(wander_target_world.y)), 5)
