@@ -62,9 +62,28 @@ class Enemy(MovingEntity):
 
         should_hide = is_in_player_fov
 
+
+
+        self.tag_neighbors(radius=constants.FLOCKING_RADIUS)
+
+        # Calculate flocking forces
+        alignment_force = self.steering_behaviours.alignment(self.game_world.enemies)
+        separation_force = self.steering_behaviours.separation(self.game_world.enemies)
+        cohesion_force = self.steering_behaviours.cohesion(self.game_world.enemies)
+        wander_force = self.steering_behaviours.wander()
+
+        flocking_force = (
+                alignment_force * 6.0 +
+                separation_force * 1.0 +
+                cohesion_force * 2.0 +
+                wander_force * 5.0
+        )
+
         if should_hide:
             steering_force = self.steering_behaviours.hide(target, obstacles)
-        else: steering_force: Vector2 = self.steering_behaviours.wander()
+        else:
+            #steering_force: Vector2 = self.steering_behaviours.wander()
+            steering_force: Vector2 =  flocking_force
 
         acceleration: Vector2 = steering_force / self.mass
 
@@ -75,6 +94,13 @@ class Enemy(MovingEntity):
         if self.velocity.length() > constants.ALPHA:
             self.heading_vec = self.velocity.normalize()
             self.side_vec = self.heading_vec.rotate(constants.CLOCKWISE_ROTATION)
+
+    def tag_neighbors(self, radius: float):
+        for other_entity in self.game_world.enemies + [self.game_world.player]:  # Include all enemies and the player
+            # First, untag each entity
+            other_entity.untag()
+            if other_entity == self:
+             continue
 
 
     def render(self, render_target : SurfaceType | Surface):

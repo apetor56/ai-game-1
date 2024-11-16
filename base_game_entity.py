@@ -18,7 +18,7 @@ class BaseGameEntity:
                  radius: float):
         self.id = BaseGameEntity.next_valid_id()
         self.type = entity_type
-        self.tag = False
+        self.tagged = False
         self.position = position
         self.scale = constants.DEFAULT_SCALE
         self.radius = radius
@@ -27,3 +27,15 @@ class BaseGameEntity:
     def next_valid_id():
         BaseGameEntity.latest_id += 1
         return BaseGameEntity.latest_id
+
+    def tag(self):
+        """Mark the entity as tagged (part of a group)."""
+        self.tagged = True
+
+    def untag(self):
+        """Unmark the entity as tagged (not part of a group)."""
+        self.tagged = False
+
+    def is_tagged(self):
+        """Check if the entity is tagged."""
+        return self.tagged
