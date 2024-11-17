@@ -9,6 +9,7 @@ class EntityType(Enum):
     ePlayer = 0
     eEnemy = 1,
     eObstacle = 2
+    eWall = 3
 
 class BaseGameEntity:
     latest_id = 0

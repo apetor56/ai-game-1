@@ -3,8 +3,8 @@ from utils import Utils
 import constants
 
 from pygame import Vector2
-import random
 
+import random
 import math
 
 class SteeringBehaviours:
@@ -16,19 +16,24 @@ class SteeringBehaviours:
         self.wander_jitter = self.wander_jitter_per_sec
         self.wander_target = Vector2(self.wander_jitter_per_sec, 0)
         self.max_force_length = 1000
-        self.min_detection_box_length = 300
+        self.min_detection_box_length = 50
         self.box_length = 0
-        self.wall_detection_feeler_length = 50
+        self.wall_detection_feeler_length = 100
         self.accumulated_steering_force = Vector2()
-        self.wander_weight = 1.0
-        self.obstacle_avoidance_weight = 10.0
-        self.wall_avoidance_weight = 10.0
+        self.wander_weight = 3.0
+        self.obstacle_avoidance_weight = 20.0
+        self.wall_avoidance_weight = 40.0
 
     def calculate_steering_force(self):
         self.accumulated_steering_force = Vector2()
 
-        self.manage_force(self.obstacle_avoidance() * self.obstacle_avoidance_weight)
-        self.manage_force(self.wander() * self.wander_weight)
+        wall_avoidance = self.wall_avoidance(self.agent.game_world.walls) * self.wall_avoidance_weight
+        obstacle_avoidance = self.obstacle_avoidance() * self.obstacle_avoidance_weight
+        wander = self.wander() * self.wander_weight
+
+        self.manage_force(wall_avoidance)
+        self.manage_force(obstacle_avoidance)
+        self.manage_force(wander)
 
         return self.accumulated_steering_force
 
@@ -46,7 +51,7 @@ class SteeringBehaviours:
         length_to_add = single_force.length()
         if length_to_add < remaining_length:
             self.accumulated_steering_force += single_force
-        else:
+        elif single_force.length() > constants.ALPHA:
             self.accumulated_steering_force += single_force.normalize() * remaining_length
 
         return True
@@ -124,7 +129,8 @@ class SteeringBehaviours:
 
         for obstacle in self.agent.game_world.obstacles:
             if obstacle.in_range_tag:
-                local_pos = Utils.point_to_local_space(obstacle.get_render_position(), self.agent.heading_vec, self.agent.side_vec, self.agent.position)
+                local_pos = Utils.point_to_local_space(obstacle.get_render_position(), self.agent.heading_vec, self.agent.side_vec,
+                                                       self.agent.position)
                 if local_pos.x >= 0:
                     expanded_radius = obstacle.radius + self.agent.radius
                     if abs(local_pos.y) < expanded_radius:
@@ -140,9 +146,10 @@ class SteeringBehaviours:
                             closest_intersecting_obstacle = obstacle
                             closest_obstacle_local_position = local_pos
 
-        steering_force = Vector2()
+
         if isinstance(closest_intersecting_obstacle, Obstacle):
             closest_intersecting_obstacle.color = constants.RED
+            steering_force = Vector2()
 
             multiplier = 1.0 + (self.box_length - closest_obstacle_local_position.x) / self.box_length
             steering_force.y = (closest_intersecting_obstacle.radius - closest_obstacle_local_position.y) * multiplier
@@ -150,4 +157,30 @@ class SteeringBehaviours:
             braking_weight = 0.2
             steering_force.x = (closest_intersecting_obstacle.radius - closest_obstacle_local_position.x) * braking_weight
 
-        return Utils.point_to_world_space(steering_force, self.agent.heading_vec, self.agent.side_vec, self.agent.position)
+            return Utils.vector_to_world_space(steering_force, self.agent.heading_vec, self.agent.side_vec)
+
+        return Vector2(0, 0)
+
+    def wall_avoidance(self, walls):
+        self.agent.create_feelers()
+        dist_to_closest_ip = float('inf')
+        closest_wall = -1
+        steering_force = Vector2(0, 0)
+        closest_point = Vector2(0, 0)
+
+        for feeler in self.agent.feelers:
+            for wall_id, wall in enumerate(walls):
+                intersects, point, dist = Utils.line_intersection_2d(self.agent.get_render_position(), feeler,
+                                                                     wall.from_(), wall.to())
+
+                if intersects and dist < dist_to_closest_ip:
+                    dist_to_closest_ip = dist
+                    closest_wall = wall_id
+                    closest_point = point
+
+            if closest_wall >= 0:
+                overshoot = feeler - closest_point
+                steering_force = walls[closest_wall].normal * overshoot.length()
+                walls[closest_wall].color = constants.RED
+
+        return Vector2(steering_force.x, -steering_force.y)

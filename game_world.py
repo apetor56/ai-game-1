@@ -2,6 +2,7 @@ import constants
 
 from pygame import Surface, SurfaceType, Vector2
 from obstacle import Obstacle
+from wall import Wall
 
 class GameWorld:
     def __init__(self,
@@ -24,7 +25,9 @@ class GameWorld:
                              constants.GREEN)
 
         self.obstacles = []
+        self.walls = []
         self.generate_obstacles()
+        self.create_walls()
 
     def generate_obstacles(self):
 
@@ -47,7 +50,7 @@ class GameWorld:
         for enemy in self.enemies:
             enemy.update(delta_time)
 
-        # self.handle_entity_collisions()
+        self.handle_entity_collisions()
 
     def render(self, render_target: Surface | SurfaceType):
         self.player.render(render_target)
@@ -55,6 +58,8 @@ class GameWorld:
             enemy.render(render_target)
         for obstacle in self.obstacles:
             obstacle.render(render_target)
+        for wall in self.walls:
+            wall.render(render_target)
 
     @staticmethod
     def handle_wall_collisions(entity):
@@ -90,12 +95,13 @@ class GameWorld:
                 self.handle_circle_collision(self.enemies[i], self.enemies[j])
 
     def handle_circle_collision(self, entity1, entity2, stationary=False):
-        distance = entity1.get_render_position().distance_to(entity2.get_render_position())
+        entity2_position = entity2.get_render_position() if stationary == False else entity2.position
+        distance = entity1.get_render_position().distance_to(entity2_position)
         min_distance = entity1.radius + entity2.radius
 
         if distance < min_distance:
             overlap = min_distance - distance
-            collision_normal = (entity2.get_render_position() - entity1.get_render_position()).normalize()
+            collision_normal = (entity2_position - entity1.get_render_position()).normalize()
             fixed_collision_normal = Vector2(collision_normal.x, -collision_normal.y)
             if stationary:
                 entity1.position -= fixed_collision_normal * overlap
@@ -141,3 +147,29 @@ class GameWorld:
                 obstacle.in_range_tag = False
             else:
                 obstacle.in_range_tag = True
+
+
+    def create_walls(self):
+        window_width = constants.WINDOW_RESOLUTION[0]
+        window_height = constants.WINDOW_RESOLUTION[1]
+
+        border_size = 20.0
+        corner_size = 0.1
+        v_dist = window_height - 2 * border_size
+        h_dist = window_width - 2 * border_size
+
+        wall_vertices = [
+            Vector2(h_dist * corner_size + border_size, border_size),
+            Vector2(window_width - border_size - h_dist * corner_size, border_size),
+            Vector2(window_width - border_size, border_size + v_dist * corner_size),
+            Vector2(window_width - border_size, window_height - border_size - v_dist * corner_size),
+            Vector2(window_width - border_size - h_dist * corner_size, window_height - border_size),
+            Vector2(h_dist * corner_size + border_size, window_height - border_size),
+            Vector2(border_size, window_height - border_size - v_dist * corner_size),
+            Vector2(border_size, border_size + v_dist * corner_size),
+        ]
+
+        for i in range(len(wall_vertices) - 1):
+            self.walls.append(Wall(wall_vertices[i], wall_vertices[i + 1]))
+
+        self.walls.append(Wall(wall_vertices[-1], wall_vertices[0]))

@@ -1,12 +1,13 @@
 import pygame
 from pygame import Vector2
 
-ENEMIES_COUNT: int = 20
+ENEMIES_COUNT: int = 15
 WINDOW_RESOLUTION = (800.0, 600.0)
 BLACK_CLEAR_COLOR = (0, 0, 0)
 RED = pygame.Color(255, 0, 0)
 GREEN = pygame.Color(0, 255, 0)
 GRAY = pygame.Color(128, 128, 128)
+BLUE = pygame.Color(0, 0, 255)
 
 DEFAULT_PLAYER_MAX_SPEED: float = 200.0
 DEFAULT_PLAYER_RADIUS: int = 20

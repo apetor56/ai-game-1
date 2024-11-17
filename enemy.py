@@ -28,6 +28,8 @@ class Enemy(MovingEntity):
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
         self.delta_time = 0.0
+        self.feelers = []
+        self.feeler_length = 50
 
     def update(self, delta_time):
         self.delta_time = delta_time
@@ -46,3 +48,26 @@ class Enemy(MovingEntity):
 
     def render(self, render_target : SurfaceType | Surface):
         pygame.draw.circle(render_target, self.color, self.get_render_position(), self.radius)
+        self.render_feelers(render_target)
+
+    def render_feelers(self, render_target : SurfaceType | Surface):
+        for feeler in self.feelers:
+            pygame.draw.line(render_target, constants.BLUE, self.get_render_position(), feeler, 3)
+
+    def create_feelers(self):
+        fixed_position = self.get_render_position()
+        fixed_heading_vec = Vector2(self.heading_vec.x, -self.heading_vec.y)
+
+        front = fixed_position + self.feeler_length * fixed_heading_vec
+
+        left_local = Utils.point_to_local_space(front, self.heading_vec, self.side_vec, fixed_position)
+        left_local.rotate_ip(-30)
+        left_local.scale_to_length(self.feeler_length / 1.5)
+        left = Utils.point_to_world_space(left_local, self.heading_vec, self.side_vec, fixed_position)
+
+        right_local = Utils.point_to_local_space(front, self.heading_vec, self.side_vec, fixed_position)
+        right_local.rotate_ip(30)
+        right_local.scale_to_length(self.feeler_length / 1.5)
+        right = Utils.point_to_world_space(right_local, self.heading_vec, self.side_vec, fixed_position)
+
+        self.feelers = [front, left, right]

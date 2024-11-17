@@ -1,5 +1,3 @@
-import math
-
 from game_world import GameWorld
 from moving_entity import MovingEntity
 from base_game_entity import EntityType
@@ -9,7 +7,6 @@ import constants
 
 import pygame
 from pygame import Vector2, SurfaceType, Surface
-
 
 class Player(MovingEntity):
     def __init__(self,
