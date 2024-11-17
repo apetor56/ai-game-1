@@ -2,6 +2,7 @@ from obstacle import Obstacle
 from utils import Utils
 import constants
 
+from math import inf
 from pygame import Vector2
 
 import random
@@ -183,3 +184,92 @@ class SteeringBehaviours:
                 walls[closest_wall].color = constants.RED
 
         return Vector2(steering_force.x, -steering_force.y)
+
+    def get_hiding_position(self, pos_ob: Vector2, radius_ob: float, pos_target: Vector2) -> Vector2:
+        distance_from_boundary = 30.0
+        dist_away = radius_ob + distance_from_boundary
+
+        to_ob = (pos_ob - pos_target).normalize()
+        hiding_position = to_ob * dist_away + pos_ob
+        return hiding_position
+
+    def hide(self, target, obstacles):
+        dist_to_closest = inf
+        best_hiding_spot = None
+
+        for obstacle in obstacles:
+            hiding_spot = self.get_hiding_position(obstacle.position, obstacle.radius, target.position)
+
+            dist = (hiding_spot - self.agent.position).length_squared()
+
+            if dist < dist_to_closest:
+                dist_to_closest = dist
+                best_hiding_spot = hiding_spot
+
+        if best_hiding_spot is None:
+            return self.evade(target)
+
+        return self.arrive(best_hiding_spot,
+                           deceleration=1.0)
+
+    # Flocking
+    def separation(self, neighbors):
+        separation_force = Vector2(0, 0)
+        neighbor_count = 0
+
+        for neighbor in neighbors:
+            # Check if the neighbor is close and tagged
+            if neighbor != self.agent and neighbor.tag:
+                # Calculate the vector pointing away from the neighbor
+                difference = self.agent.position - neighbor.position
+                # Weight by the inverse of the distance to get stronger force when closer
+                if difference.length() > 0:
+                    separation_force += difference.normalize() / difference.length()
+                    neighbor_count += 1
+
+        if neighbor_count > 0:
+            separation_force /= neighbor_count
+
+        return separation_force
+
+    def alignment(self, neighbors):
+        average_heading = Vector2(0, 0)
+        neighbor_count = 0
+
+        for neighbor in neighbors:
+            # Ensure the agent doesn't consider itself and that the neighbor is tagged
+            if neighbor != self.agent and neighbor.tag:
+                # Sum the headings of all nearby neighbors
+                average_heading += neighbor.heading_vec
+                neighbor_count += 1
+
+        # If there were any valid neighbors, calculate the average heading
+        if neighbor_count > 0:
+            average_heading /= neighbor_count
+            # Calculate the alignment force as the difference from the agent's current heading
+            alignment_force = average_heading - self.agent.heading_vec
+            return alignment_force
+
+        # Return a zero vector if no neighbors were considered
+        return Vector2(0, 0)
+
+    def cohesion(self, neighbors):
+        center_of_mass = Vector2(0, 0)
+        neighbor_count = 0
+
+        for neighbor in neighbors:
+            # Check if the neighbor is tagged
+            if neighbor != self.agent and neighbor.tag:
+                # Sum the positions of all nearby neighbors
+                center_of_mass += neighbor.position
+                neighbor_count += 1
+
+        # If there were any valid neighbors, calculate the average position
+        if neighbor_count > 0:
+            center_of_mass /= neighbor_count
+            # Calculate the cohesion force as the vector toward the center of mass
+            cohesion_force = center_of_mass - self.agent.position
+            return cohesion_force
+
+        # Return a zero vector if no neighbors were considered
+        return Vector2(0, 0)

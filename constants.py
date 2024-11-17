@@ -23,6 +23,7 @@ DEFAULT_SCALE = Vector2(1.0, 1.0)
 
 ALPHA: float = 1e-6
 COUNTERCLOCKWISE_ROTATION: float = 90.0
+FLOCKING_RADIUS: int = 5
 
 class Deceleration:
     #speed of arrive

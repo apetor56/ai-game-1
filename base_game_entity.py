@@ -21,6 +21,7 @@ class BaseGameEntity:
         self.id = BaseGameEntity.next_valid_id()
         self.type = entity_type
         self.tag = False
+        self.tagged = False
         self.position = Vector2(position.x, constants.WINDOW_RESOLUTION[1] - position.y)
         self.scale = constants.DEFAULT_SCALE
         self.radius = radius
@@ -32,3 +33,15 @@ class BaseGameEntity:
 
     def get_render_position(self):
         return Vector2(self.position.x, constants.WINDOW_RESOLUTION[1] - self.position.y)
+
+    def tag(self):
+        """Mark the entity as tagged (part of a group)."""
+        self.tagged = True
+
+    def untag(self):
+        """Unmark the entity as tagged (not part of a group)."""
+        self.tagged = False
+
+    def is_tagged(self):
+        """Check if the entity is tagged."""
+        return self.tagged

@@ -1,3 +1,4 @@
+import time
 from game_world import GameWorld
 from moving_entity import MovingEntity
 from base_game_entity import EntityType
@@ -45,6 +46,40 @@ class Enemy(MovingEntity):
             self.side_vec = self.heading_vec.rotate(constants.COUNTERCLOCKWISE_ROTATION)
 
         self.position += self.velocity * delta_time
+
+        # # Hide
+        # to_enemy_from_player = self.position - target.position
+        # is_in_player_fov = target.heading_vec.dot(to_enemy_from_player.normalize()) > 0.5  # cos(45 degrees)
+        #
+        # should_hide = is_in_player_fov
+        #
+        # self.tag_neighbors(radius=constants.FLOCKING_RADIUS)
+        #
+        # # Calculate flocking forces
+        # alignment_force = self.steering_behaviours.alignment(self.game_world.enemies)
+        # separation_force = self.steering_behaviours.separation(self.game_world.enemies)
+        # cohesion_force = self.steering_behaviours.cohesion(self.game_world.enemies)
+        # wander_force = self.steering_behaviours.wander()
+        #
+        # flocking_force = (
+        #         alignment_force * 6.0 +
+        #         separation_force * 1.0 +
+        #         cohesion_force * 2.0 +
+        #         wander_force * 5.0
+        # )
+        #
+        # if should_hide:
+        #     steering_force = self.steering_behaviours.hide(target, obstacles)
+        # else:
+        #     # steering_force: Vector2 = self.steering_behaviours.wander()
+        #     steering_force: Vector2 = flocking_force
+
+    def tag_neighbors(self, radius: float):
+        for other_entity in self.game_world.enemies + [self.game_world.player]:  # Include all enemies and the player
+            # First, untag each entity
+            other_entity.untag()
+            if other_entity == self:
+             continue
 
     def render(self, render_target : SurfaceType | Surface):
         pygame.draw.circle(render_target, self.color, self.get_render_position(), self.radius)
