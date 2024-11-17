@@ -24,6 +24,7 @@ class SteeringBehaviours:
         self.wander_weight = 3.0
         self.obstacle_avoidance_weight = 20.0
         self.wall_avoidance_weight = 40.0
+        self.hide_weight = 5.0
 
     def calculate_steering_force(self):
         self.accumulated_steering_force = Vector2()
@@ -31,9 +32,11 @@ class SteeringBehaviours:
         wall_avoidance = self.wall_avoidance(self.agent.game_world.walls) * self.wall_avoidance_weight
         obstacle_avoidance = self.obstacle_avoidance() * self.obstacle_avoidance_weight
         wander = self.wander() * self.wander_weight
+        hide = self.hide(self.agent.game_world.player, self.agent.game_world.obstacles) * self.hide_weight
 
         self.manage_force(wall_avoidance)
         self.manage_force(obstacle_avoidance)
+        self.manage_force(hide)
         self.manage_force(wander)
 
         return self.accumulated_steering_force
@@ -194,23 +197,27 @@ class SteeringBehaviours:
         return hiding_position
 
     def hide(self, target, obstacles):
-        dist_to_closest = inf
-        best_hiding_spot = None
+        to_enemy_from_player = self.agent.position - target.position
+        is_in_player_fov = target.heading_vec.dot(to_enemy_from_player.normalize()) > 0.5  # cos(45 degrees)
+        if is_in_player_fov:
+            dist_to_closest = inf
+            best_hiding_spot = None
 
-        for obstacle in obstacles:
-            hiding_spot = self.get_hiding_position(obstacle.position, obstacle.radius, target.position)
+            for obstacle in obstacles:
+                hiding_spot = self.get_hiding_position(obstacle.get_render_position(), obstacle.radius, target.position)
 
-            dist = (hiding_spot - self.agent.position).length_squared()
+                dist = (hiding_spot - self.agent.position).length_squared()
 
-            if dist < dist_to_closest:
-                dist_to_closest = dist
-                best_hiding_spot = hiding_spot
+                if dist < dist_to_closest:
+                    dist_to_closest = dist
+                    best_hiding_spot = hiding_spot
 
-        if best_hiding_spot is None:
-            return self.evade(target)
+            if best_hiding_spot is None:
+                return self.evade(target)
 
-        return self.arrive(best_hiding_spot,
-                           deceleration=1.0)
+            return self.arrive(best_hiding_spot,
+                               deceleration=1.0)
+        return Vector2()
 
     # Flocking
     def separation(self, neighbors):
