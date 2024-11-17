@@ -19,7 +19,7 @@ class GameWorld:
                                       constants.RED))
         from player import Player
         self.player = Player(self,
-                             Vector2(),
+                             constants.DEFAULT_PLAYER_VELOCITY,
                              constants.DEFAULT_PLAYER_MAX_SPEED,
                              constants.DEFAULT_PLAYER_RADIUS,
                              constants.GREEN)
@@ -58,8 +58,6 @@ class GameWorld:
             enemy.render(render_target)
         for obstacle in self.obstacles:
             obstacle.render(render_target)
-        for wall in self.walls:
-            wall.render(render_target)
 
     @staticmethod
     def handle_wall_collisions(entity):

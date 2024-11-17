@@ -14,4 +14,3 @@ class Obstacle(BaseGameEntity):
 
     def render(self, render_target):
         pygame.draw.circle(render_target, self.color, self.position, self.radius)
-        self.color = constants.GREEN

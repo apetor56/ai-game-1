@@ -48,11 +48,6 @@ class Enemy(MovingEntity):
 
     def render(self, render_target : SurfaceType | Surface):
         pygame.draw.circle(render_target, self.color, self.get_render_position(), self.radius)
-        self.render_feelers(render_target)
-
-    def render_feelers(self, render_target : SurfaceType | Surface):
-        for feeler in self.feelers:
-            pygame.draw.line(render_target, constants.BLUE, self.get_render_position(), feeler, 3)
 
     def create_feelers(self):
         fixed_position = self.get_render_position()

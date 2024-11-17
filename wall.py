@@ -1,9 +1,6 @@
-import pygame.draw_py
-from pygame import Surface, SurfaceType
 from pygame.math import Vector2
 
 import constants
-
 
 class Wall:
     def __init__(self, point_a=None, point_b=None, normal=None):
@@ -25,7 +22,3 @@ class Wall:
 
     def normal(self):
         return self.normal
-
-    def render(self, render_target: Surface | SurfaceType):
-        pygame.draw.line(render_target, self.color, self.point_a, self.point_b, 5)
-        self.color = constants.GREEN

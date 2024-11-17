@@ -148,7 +148,6 @@ class SteeringBehaviours:
 
 
         if isinstance(closest_intersecting_obstacle, Obstacle):
-            closest_intersecting_obstacle.color = constants.RED
             steering_force = Vector2()
 
             multiplier = 1.0 + (self.box_length - closest_obstacle_local_position.x) / self.box_length
