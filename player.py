@@ -1,3 +1,4 @@
+from operator import truth
 from game_world import GameWorld
 from moving_entity import MovingEntity
 from base_game_entity import EntityType
@@ -30,6 +31,9 @@ class Player(MovingEntity):
         self.rotation_speed = 180.0
         self.movement_vec = Vector2(0.0, 0.0)
         self.front = Vector2(0.0, -self.radius)
+        self.shoot_cooldown = 0  # Cooldown timer in seconds
+        self.shooting = False
+        self.shot_end = None
 
     def process_input(self):
         self.clear_previous_inputs()
@@ -41,14 +45,52 @@ class Player(MovingEntity):
             self.rotation = self.rotation_speed
         if keys[pygame.K_w]:
             self.movement_vec += Vector2(0.0, self.max_speed)
+        if keys[pygame.K_SPACE] and self.shoot_cooldown <= 0:
+            self.shooting = True
+            self.shoot()
+            self.shoot_cooldown = 0.5  # Cooldown of 0.5 seconds
+        else:
+            self.shooting = False
+
+    def shoot(self):
+        shot_start = self.position
+        shot_direction = self.heading_vec.normalize()  # Ensure the direction is normalized
+        max_shot_length = 800  # Max shot range
+        shot_end = shot_start + shot_direction * max_shot_length
+
+        # Check for obstacle blocks
+        blocked, intersection_point = self.steering_behaviours.is_shot_blocked(shot_start, shot_direction,self.game_world.obstacles)
+        if blocked:
+            shot_end = intersection_point
+        else:
+            blocked, intersection_point = self.steering_behaviours.is_shot_blocked(shot_start, shot_direction,
+                                                                                   self.game_world.enemies)
+            if blocked:
+                shot_end = intersection_point
+
+        self.shot_end = shot_end# Save the shot end point for rendering
+
+        # to dziwnie działa
+        '''for enemy in self.game_world.enemies[:]:
+
+            if self.steering_behaviours.is_enemy_hit(shot_start,shot_end,enemy):
+                self.game_world.enemies.remove(enemy)
+                print(f"Enemy at {enemy.position} killed!")'''
+
 
     def update(self, delta_time):
         self.update_rotation(delta_time)
         self.update_movement(delta_time)
 
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= delta_time
+
     def render(self, render_target : SurfaceType | Surface):
         pygame.draw.circle(render_target, self.color, self.position, self.radius, width = 1)
         pygame.draw.polygon(render_target, constants.GREEN, self.get_triangle_vertices())
+
+        if self.shooting and self.shot_end:
+            pygame.draw.line(render_target, constants.GREEN, self.position, self.shot_end, width=1)
 
     def update_rotation(self, delta_time: float):
         if self.rotation != 0:

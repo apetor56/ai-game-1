@@ -224,11 +224,8 @@ class SteeringBehaviours:
         neighbor_count = 0
 
         for neighbor in neighbors:
-            # Check if the neighbor is close and tagged
             if neighbor != self.agent and neighbor.tag:
-                # Calculate the vector pointing away from the neighbor
                 difference = self.agent.position - neighbor.position
-                # Weight by the inverse of the distance to get stronger force when closer
                 if difference.length() > 0:
                     separation_force += difference.normalize() / difference.length()
                     neighbor_count += 1
@@ -243,20 +240,15 @@ class SteeringBehaviours:
         neighbor_count = 0
 
         for neighbor in neighbors:
-            # Ensure the agent doesn't consider itself and that the neighbor is tagged
             if neighbor != self.agent and neighbor.tag:
-                # Sum the headings of all nearby neighbors
                 average_heading += neighbor.heading_vec
                 neighbor_count += 1
 
-        # If there were any valid neighbors, calculate the average heading
         if neighbor_count > 0:
             average_heading /= neighbor_count
-            # Calculate the alignment force as the difference from the agent's current heading
             alignment_force = average_heading - self.agent.heading_vec
             return alignment_force
 
-        # Return a zero vector if no neighbors were considered
         return Vector2(0, 0)
 
     def cohesion(self, neighbors):
@@ -264,21 +256,86 @@ class SteeringBehaviours:
         neighbor_count = 0
 
         for neighbor in neighbors:
-            # Check if the neighbor is tagged
             if neighbor != self.agent and neighbor.tag:
-                # Sum the positions of all nearby neighbors
                 center_of_mass += neighbor.position
                 neighbor_count += 1
 
-        # If there were any valid neighbors, calculate the average position
         if neighbor_count > 0:
             center_of_mass /= neighbor_count
-            # Calculate the cohesion force as the vector toward the center of mass
             cohesion_force = center_of_mass - self.agent.position
             return cohesion_force
 
-        # Return a zero vector if no neighbors were considered
         return Vector2(0, 0)
+
+    def is_shot_blocked(self, shot_start, shot_direction, obstacles):
+        """
+        Checks if the shot vector intersects with any obstacle.
+        :param shot_start: Starting point of the shot (Vector2)
+        :param shot_direction: Direction of the shot (Vector2)
+        :return: (True, intersection_point) if blocked, otherwise (False, None)
+        """
+        for obstacle in obstacles:
+            if self.is_line_circle_intersect(shot_start, shot_direction, obstacle.position, obstacle.radius):
+                # Calculate the intersection point for debugging or rendering purposes
+                intersection_point = self.get_intersection_point(shot_start, shot_direction, obstacle)
+                return True, intersection_point
+        return False, None
+
+    def is_line_circle_intersect(self, line_start, line_dir, circle_center, circle_radius):
+        """
+        Determines whether a line intersects a circle.
+        :param line_start: Starting point of the line (Vector2)
+        :param line_dir: Direction of the line (Vector2, normalized)
+        :param circle_center: Center of the circle (Vector2)
+        :param circle_radius: Radius of the circle (float)
+        :return: True if the line intersects the circle, False otherwise.
+        """
+        to_circle = circle_center - line_start
+
+        proj_length = to_circle.dot(line_dir)
+
+        closest_point = line_start + line_dir * proj_length
+
+        distance_to_circle = closest_point.distance_to(circle_center)
+
+        return distance_to_circle <= circle_radius
+
+    def get_intersection_point(self, line_start, line_dir, obstacle):
+        """
+        Calculates the intersection point of the shot with the obstacle.
+        Assumes the shot intersects the obstacle.
+        :param line_start: Starting point of the line (Vector2)
+        :param line_dir: Direction of the line (Vector2, normalized)
+        :param obstacle: The obstacle object containing position and radius
+        :return: Intersection point (Vector2)
+        """
+        # Solve the quadratic equation for intersection
+        center_to_start = line_start - obstacle.position
+        a = line_dir.dot(line_dir)
+        b = 2 * center_to_start.dot(line_dir)
+        c = center_to_start.dot(center_to_start) - obstacle.radius ** 2
+        discriminant = b ** 2 - 4 * a * c
+
+        if discriminant < 0:
+            return None  # No intersection
+
+        # Find the closest intersection point
+        sqrt_discriminant = discriminant ** 0.5
+        t1 = (-b - sqrt_discriminant) / (2 * a)
+        t2 = (-b + sqrt_discriminant) / (2 * a)
+
+        # Return the closest positive intersection point
+        t = min(t1, t2)
+        return line_start + line_dir * t if t > 0 else None
+
+
+    def is_enemy_hit(self, start, end, enemy):
+        enemy_to_line = abs((end.x - start.x) * (start.y - enemy.position.y) -
+                            (start.x - enemy.position.x) * (end.y - start.y))
+
+        line_length = start.distance_to(end)
+        distance = enemy_to_line / line_length if line_length > 0 else float('inf')
+        return distance <= enemy.radius
 
     def flock(self):
         self.agent.tag_neighbors(radius = constants.FLOCKING_RADIUS)
