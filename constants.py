@@ -1,12 +1,15 @@
+from pickle import FLOAT
+
 import pygame
 from pygame import Vector2
 
-ENEMIES_COUNT: int = 15
+ENEMIES_COUNT: int = 7
 WINDOW_RESOLUTION = (800.0, 600.0)
 BLACK_CLEAR_COLOR = (0, 0, 0)
 RED = pygame.Color(255, 0, 0)
 GREEN = pygame.Color(0, 255, 0)
 GRAY = pygame.Color(128, 128, 128)
+EPSILON = 1e-9
 
 DEFAULT_PLAYER_VELOCITY = Vector2(0, -200.0)
 DEFAULT_PLAYER_MAX_SPEED: float = DEFAULT_PLAYER_VELOCITY.length()

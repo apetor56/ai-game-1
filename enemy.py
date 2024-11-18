@@ -73,10 +73,10 @@ class Enemy(MovingEntity):
         wander_force = self.steering_behaviours.wander()
 
         flocking_force = (
-                alignment_force * 6.0 +
+                alignment_force * 16.0 +
                 separation_force * 1.0 +
-                cohesion_force * 2.0 +
-                wander_force * 5.0
+                cohesion_force * 1.0 +
+                wander_force * 1.0
         )
 
         if should_hide:
