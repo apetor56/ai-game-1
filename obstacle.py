@@ -1,8 +1,6 @@
 from base_game_entity import BaseGameEntity
 from base_game_entity import EntityType
 
-import constants
-
 import pygame
 from pygame import Vector2
 

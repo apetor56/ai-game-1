@@ -16,8 +16,8 @@ class SteeringBehaviours:
         self.wander_distance = 30
         self.wander_jitter = self.wander_jitter_per_sec
         self.wander_target = Vector2(self.wander_jitter_per_sec, 0)
-        self.max_force_length = 700
-        self.min_detection_box_length = 50
+        self.max_force_length = 1000
+        self.min_detection_box_length = 100
         self.box_length = 0
         self.wall_detection_feeler_length = 100
         self.accumulated_steering_force = Vector2()
@@ -32,15 +32,13 @@ class SteeringBehaviours:
 
         wall_avoidance = self.wall_avoidance(self.agent.game_world.walls) * self.wall_avoidance_weight
         obstacle_avoidance = self.obstacle_avoidance() * self.obstacle_avoidance_weight
-        wander = self.wander() * self.wander_weight
         hide = self.hide(self.agent.game_world.player, self.agent.game_world.obstacles) * self.hide_weight
         flock = self.flock() * self.flock_weight
 
         self.accumulate_force(wall_avoidance)
         self.accumulate_force(obstacle_avoidance)
-        # self.accumulate_force(hide)
-        # self.accumulate_force(flock)
-        self.accumulate_force(wander)
+        self.accumulate_force(hide)
+        self.accumulate_force(flock)
 
         return self.accumulated_steering_force
 
@@ -159,7 +157,7 @@ class SteeringBehaviours:
             braking_weight = 0.2
             steering_force.x = (closest_intersecting_obstacle.radius - closest_obstacle_local_position.x) * braking_weight
 
-            return Utils.vector_to_world_space(steering_force, self.agent.heading_vec, self.agent.side_vec)
+            return -Utils.vector_to_world_space(steering_force, self.agent.heading_vec, self.agent.side_vec)
 
         return Vector2(0, 0)
 
