@@ -93,24 +93,22 @@ class GameWorld:
                 self.handle_circle_collision(self.enemies[i], self.enemies[j])
 
     def handle_circle_collision(self, entity1, entity2, stationary=False):
-        entity2_position = entity2.get_render_position() if stationary == False else entity2.position
-        distance = entity1.get_render_position().distance_to(entity2_position)
+        distance = entity1.position.distance_to(entity2.position)
         min_distance = entity1.radius + entity2.radius
 
         if distance < min_distance:
             overlap = min_distance - distance
-            collision_normal = (entity2_position - entity1.get_render_position()).normalize()
-            fixed_collision_normal = Vector2(collision_normal.x, -collision_normal.y)
+            collision_normal = (entity2.position - entity1.position).normalize()
             if stationary:
-                entity1.position -= fixed_collision_normal * overlap
+                entity1.position -= collision_normal * overlap
             else:
-                entity1.position -= fixed_collision_normal * (overlap / 2)
-                entity2.position += fixed_collision_normal * (overlap / 2)
+                entity1.position -= collision_normal * (overlap / 2)
+                entity2.position += collision_normal * (overlap / 2)
 
             if not stationary and hasattr(entity1, 'velocity') and hasattr(entity2, 'velocity'):
-                self.resolve_velocity(entity1, entity2, fixed_collision_normal)
+                self.resolve_velocity(entity1, entity2, collision_normal)
             elif stationary and hasattr(entity1, 'velocity'):
-                self.resolve_velocity_against_stationary(entity1, fixed_collision_normal)
+                self.resolve_velocity_against_stationary(entity1, collision_normal)
 
     @staticmethod
     def resolve_velocity(entity1, entity2, collision_normal):
@@ -141,11 +139,10 @@ class GameWorld:
 
     def tag_obstacles_within_view_range(self, enemy, box_length):
         for obstacle in self.obstacles:
-            if box_length + obstacle.radius < (enemy.position - obstacle.get_render_position()).length():
+            if box_length + obstacle.radius < (enemy.position - obstacle.position).length():
                 obstacle.in_range_tag = False
             else:
                 obstacle.in_range_tag = True
-
 
     def create_walls(self):
         window_width = constants.WINDOW_RESOLUTION[0]

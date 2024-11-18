@@ -47,57 +47,35 @@ class Enemy(MovingEntity):
 
         self.position += self.velocity * delta_time
 
-        # # Hide
-        # to_enemy_from_player = self.position - target.position
-        # is_in_player_fov = target.heading_vec.dot(to_enemy_from_player.normalize()) > 0.5  # cos(45 degrees)
-        #
-        # should_hide = is_in_player_fov
-        #
-        # self.tag_neighbors(radius=constants.FLOCKING_RADIUS)
-        #
-        # # Calculate flocking forces
-        # alignment_force = self.steering_behaviours.alignment(self.game_world.enemies)
-        # separation_force = self.steering_behaviours.separation(self.game_world.enemies)
-        # cohesion_force = self.steering_behaviours.cohesion(self.game_world.enemies)
-        # wander_force = self.steering_behaviours.wander()
-        #
-        # flocking_force = (
-        #         alignment_force * 6.0 +
-        #         separation_force * 1.0 +
-        #         cohesion_force * 2.0 +
-        #         wander_force * 5.0
-        # )
-        #
-        # if should_hide:
-        #     steering_force = self.steering_behaviours.hide(target, obstacles)
-        # else:
-        #     # steering_force: Vector2 = self.steering_behaviours.wander()
-        #     steering_force: Vector2 = flocking_force
-
     def tag_neighbors(self, radius: float):
         for other_entity in self.game_world.enemies + [self.game_world.player]:  # Include all enemies and the player
             # First, untag each entity
             other_entity.untag()
-            if other_entity == self:
-             continue
+            to = other_entity.position - self.position
+
+            group_range = radius + other_entity.radius
+            if not other_entity == self and to.length() < group_range:
+                other_entity.tag()
 
     def render(self, render_target : SurfaceType | Surface):
-        pygame.draw.circle(render_target, self.color, self.get_render_position(), self.radius)
+        pygame.draw.circle(render_target, self.color, self.position, self.radius)
+        # self.render_feelers(render_target)
+
+    def render_feelers(self, render_target : SurfaceType | Surface):
+        for feeler in self.feelers:
+            pygame.draw.line(render_target, constants.BLUE, self.position, feeler)
 
     def create_feelers(self):
-        fixed_position = self.get_render_position()
-        fixed_heading_vec = Vector2(self.heading_vec.x, -self.heading_vec.y)
+        front = self.position + self.feeler_length * self.heading_vec
 
-        front = fixed_position + self.feeler_length * fixed_heading_vec
-
-        left_local = Utils.point_to_local_space(front, self.heading_vec, self.side_vec, fixed_position)
+        left_local = Utils.point_to_local_space(front, self.heading_vec, self.side_vec, self.position)
         left_local.rotate_ip(-30)
         left_local.scale_to_length(self.feeler_length / 1.5)
-        left = Utils.point_to_world_space(left_local, self.heading_vec, self.side_vec, fixed_position)
+        left = Utils.point_to_world_space(left_local, self.heading_vec, self.side_vec, self.position)
 
-        right_local = Utils.point_to_local_space(front, self.heading_vec, self.side_vec, fixed_position)
+        right_local = Utils.point_to_local_space(front, self.heading_vec, self.side_vec, self.position)
         right_local.rotate_ip(30)
         right_local.scale_to_length(self.feeler_length / 1.5)
-        right = Utils.point_to_world_space(right_local, self.heading_vec, self.side_vec, fixed_position)
+        right = Utils.point_to_world_space(right_local, self.heading_vec, self.side_vec, self.position)
 
         self.feelers = [front, left, right]

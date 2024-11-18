@@ -16,7 +16,7 @@ class SteeringBehaviours:
         self.wander_distance = 30
         self.wander_jitter = self.wander_jitter_per_sec
         self.wander_target = Vector2(self.wander_jitter_per_sec, 0)
-        self.max_force_length = 1000
+        self.max_force_length = 700
         self.min_detection_box_length = 50
         self.box_length = 0
         self.wall_detection_feeler_length = 100
@@ -24,7 +24,8 @@ class SteeringBehaviours:
         self.wander_weight = 3.0
         self.obstacle_avoidance_weight = 20.0
         self.wall_avoidance_weight = 40.0
-        self.hide_weight = 5.0
+        self.hide_weight = 15.0
+        self.flock_weight = 1.0
 
     def calculate_steering_force(self):
         self.accumulated_steering_force = Vector2()
@@ -33,17 +34,15 @@ class SteeringBehaviours:
         obstacle_avoidance = self.obstacle_avoidance() * self.obstacle_avoidance_weight
         wander = self.wander() * self.wander_weight
         hide = self.hide(self.agent.game_world.player, self.agent.game_world.obstacles) * self.hide_weight
+        flock = self.flock() * self.flock_weight
 
-        self.manage_force(wall_avoidance)
-        self.manage_force(obstacle_avoidance)
-        self.manage_force(hide)
-        self.manage_force(wander)
+        self.accumulate_force(wall_avoidance)
+        self.accumulate_force(obstacle_avoidance)
+        # self.accumulate_force(hide)
+        # self.accumulate_force(flock)
+        self.accumulate_force(wander)
 
         return self.accumulated_steering_force
-
-    def manage_force(self, single_force):
-        if not self.accumulate_force(single_force):
-            return self.accumulated_steering_force
 
     def accumulate_force(self, single_force):
         current_force_length = self.accumulated_steering_force.length()
@@ -133,7 +132,7 @@ class SteeringBehaviours:
 
         for obstacle in self.agent.game_world.obstacles:
             if obstacle.in_range_tag:
-                local_pos = Utils.point_to_local_space(obstacle.get_render_position(), self.agent.heading_vec, self.agent.side_vec,
+                local_pos = Utils.point_to_local_space(obstacle.position, self.agent.heading_vec, self.agent.side_vec,
                                                        self.agent.position)
                 if local_pos.x >= 0:
                     expanded_radius = obstacle.radius + self.agent.radius
@@ -173,7 +172,7 @@ class SteeringBehaviours:
 
         for feeler in self.agent.feelers:
             for wall_id, wall in enumerate(walls):
-                intersects, point, dist = Utils.line_intersection_2d(self.agent.get_render_position(), feeler,
+                intersects, point, dist = Utils.line_intersection_2d(self.agent.position, feeler,
                                                                      wall.from_(), wall.to())
 
                 if intersects and dist < dist_to_closest_ip:
@@ -186,9 +185,10 @@ class SteeringBehaviours:
                 steering_force = walls[closest_wall].normal * overshoot.length()
                 walls[closest_wall].color = constants.RED
 
-        return Vector2(steering_force.x, -steering_force.y)
+        return steering_force
 
-    def get_hiding_position(self, pos_ob: Vector2, radius_ob: float, pos_target: Vector2) -> Vector2:
+    @staticmethod
+    def get_hiding_position(pos_ob: Vector2, radius_ob: float, pos_target: Vector2) -> Vector2:
         distance_from_boundary = 30.0
         dist_away = radius_ob + distance_from_boundary
 
@@ -204,7 +204,8 @@ class SteeringBehaviours:
             best_hiding_spot = None
 
             for obstacle in obstacles:
-                hiding_spot = self.get_hiding_position(obstacle.get_render_position(), obstacle.radius, target.position)
+                hiding_spot = self.get_hiding_position(obstacle.position, obstacle.radius,
+                                                       target.position)
 
                 dist = (hiding_spot - self.agent.position).length_squared()
 
@@ -280,3 +281,20 @@ class SteeringBehaviours:
 
         # Return a zero vector if no neighbors were considered
         return Vector2(0, 0)
+
+    def flock(self):
+        self.agent.tag_neighbors(radius = constants.FLOCKING_RADIUS)
+
+        alignment_force = self.alignment(self.agent.game_world.enemies)
+        separation_force = self.separation(self.agent.game_world.enemies)
+        cohesion_force = self.cohesion(self.agent.game_world.enemies)
+        wander_force = self.wander()
+
+        flocking_force = (
+                alignment_force * 16.0 +
+                separation_force * 1.0 +
+                cohesion_force * 1.0 +
+                wander_force * 1.0
+        )
+
+        return flocking_force

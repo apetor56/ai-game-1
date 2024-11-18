@@ -47,12 +47,12 @@ class Player(MovingEntity):
         self.update_movement(delta_time)
 
     def render(self, render_target : SurfaceType | Surface):
-        pygame.draw.circle(render_target, self.color, self.get_render_position(), self.radius, width = 1)
+        pygame.draw.circle(render_target, self.color, self.position, self.radius, width = 1)
         pygame.draw.polygon(render_target, constants.GREEN, self.get_triangle_vertices())
 
     def update_rotation(self, delta_time: float):
         if self.rotation != 0:
-            self.heading_vec = self.heading_vec.rotate(-self.rotation * delta_time).normalize()
+            self.heading_vec = self.heading_vec.rotate(self.rotation * delta_time).normalize()
             self.side_vec = self.heading_vec.rotate(constants.COUNTERCLOCKWISE_ROTATION)
             translated_vertex = self.front
 
@@ -79,4 +79,4 @@ class Player(MovingEntity):
         left = self.front.rotate(120)
         right = self.front.rotate(240)
 
-        return [self.front + self.get_render_position(), left + self.get_render_position(), right + self.get_render_position()]
+        return [self.front + self.position, left + self.position, right + self.position]
