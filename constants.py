@@ -3,7 +3,7 @@ from pickle import FLOAT
 import pygame
 from pygame import Vector2
 
-ENEMIES_COUNT: int = 7
+ENEMIES_COUNT: int = 15
 WINDOW_RESOLUTION = (800.0, 600.0)
 BLACK_CLEAR_COLOR = (0, 0, 0)
 RED = pygame.Color(255, 0, 0)

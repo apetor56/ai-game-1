@@ -73,21 +73,18 @@ class Player(MovingEntity):
                 shot_end = intersection_point
                 print("enemy shot")
                 for enemy in self.game_world.enemies:
-                    if enemy.position.distance_to(intersection_point) <= enemy.radius:
-                        print("Enemy at {enemy.position} killed!")
-                        self.game_world.enemies.remove(enemy)
-                        break
+                    # Upewnij się, że enemy.position i intersection_point to obiekty Vector2
+                    # To jest dlatego bo z jakiegos powodu czasem ich nie widzi i crashuje
+                    if isinstance(enemy.position, Vector2) and isinstance(intersection_point, Vector2):
+                        if enemy.position.distance_to(intersection_point) <= enemy.radius:
+                            print(f"Enemy at {enemy.position} killed!")
+                            self.game_world.enemies.remove(enemy)
+                            break
+                    else:
+                        print(f"Warning: Invalid position type for enemy or intersection point.")
 
 
         self.shot_end = shot_end# Save the shot end point for rendering
-
-        # to dziwnie działa
-        '''for enemy in self.game_world.enemies[:]:
-
-            if self.steering_behaviours.is_enemy_hit(shot_start,shot_end,enemy):
-                self.game_world.enemies.remove(enemy)
-                print(f"Enemy at {enemy.position} killed!")'''
-
 
     def update(self, delta_time):
         self.update_rotation(delta_time)

@@ -56,6 +56,8 @@ class Enemy(MovingEntity):
 
         self.position += self.velocity * delta_time
 
+
+
         #Hide
         to_enemy_from_player = self.position - target.position
         is_in_player_fov = target.heading_vec.dot(to_enemy_from_player.normalize()) > 0.5  # cos(45 degrees)
@@ -79,7 +81,15 @@ class Enemy(MovingEntity):
                 wander_force * 1.0
         )
 
-        if should_hide:
+        if self.steering_behaviours.check_group(self.game_world.enemies, self.position,8,  30):
+            print("Grupa przeciwników jest wystarczająco duża")
+           # steering_force: Vector2 = self.steering_behaviours.seek(self.game_world.player.position)
+            #steering_force: Vector2 = self.steering_behaviours.pursuit(self.game_world.player)
+            steering_force: Vector2 = flocking_force
+            pass
+
+
+        elif should_hide:
             steering_force = self.steering_behaviours.hide(target, obstacles)
         else:
             #steering_force: Vector2 = self.steering_behaviours.wander()
