@@ -71,6 +71,13 @@ class Player(MovingEntity):
                                                                                    self.game_world.enemies)
             if blocked:
                 shot_end = intersection_point
+                print("enemy shot")
+                for enemy in self.game_world.enemies:
+                    if enemy.position.distance_to(intersection_point) <= enemy.radius:
+                        print("Enemy at {enemy.position} killed!")
+                        self.game_world.enemies.remove(enemy)
+                        break
+
 
         self.shot_end = shot_end# Save the shot end point for rendering
 
