@@ -292,6 +292,23 @@ class SteeringBehaviours:
                 return True, intersection_point
         return False, None
 
+    def is_shot_blocked_by_enemy(self, shot_start, shot_direction, enemies):
+        """
+        Checks if the shot vector intersects with any obstacle.
+        :param shot_start: Starting point of the shot (Vector2)
+        :param shot_direction: Direction of the shot (Vector2)
+        :return: (True, intersection_point) if blocked, otherwise (False, None)
+        """
+        for enemy in enemies:
+            if self.is_line_circle_intersect(shot_start, shot_direction, enemy.position, enemy.radius+5):
+                intersection_point = self.get_intersection_point(shot_start, shot_direction, enemy)
+
+                print(f"Enemy at {enemy.position} killed!")
+                enemies.remove(enemy)
+
+                return True, intersection_point
+        return False, None
+
     def is_line_circle_intersect(self, line_start, line_dir, circle_center, circle_radius):
         """
         Determines whether a line intersects a circle.
