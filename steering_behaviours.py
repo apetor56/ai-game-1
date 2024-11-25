@@ -353,3 +353,18 @@ class SteeringBehaviours:
         )
 
         return flocking_force
+
+    def check_group(self, enemies, position, desired_number, radius: float = constants.FLOCKING_RADIUS) -> bool:
+
+        count = 0
+        for other_entity in enemies:
+            if other_entity == self:
+                continue
+
+            distance = position.distance_to(other_entity.position)
+
+            if distance <= radius:
+                count += 1
+
+        return count >= desired_number
+
