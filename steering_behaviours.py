@@ -24,6 +24,7 @@ class SteeringBehaviours:
         self.wander_weight = 3.0
         self.obstacle_avoidance_weight = 20.0
         self.wall_avoidance_weight = 40.0
+        self.pursuit_weight = 15.0
         self.hide_weight = 15.0
         self.flock_weight = 1.0
 
@@ -32,11 +33,20 @@ class SteeringBehaviours:
 
         wall_avoidance = self.wall_avoidance(self.agent.game_world.walls) * self.wall_avoidance_weight
         obstacle_avoidance = self.obstacle_avoidance() * self.obstacle_avoidance_weight
+        pursuit = Vector2(0, 0)
         hide = self.hide(self.agent.game_world.player, self.agent.game_world.obstacles) * self.hide_weight
         flock = self.flock() * self.flock_weight
+        wander = self.wander() * self.wander_weight
+
+        min_group_size = 5
+        group_radius = 100
+        if self.check_group(self.agent.game_world.enemies, self.agent.position, min_group_size, group_radius):
+            hide = Vector2(0, 0)
+            pursuit = self.pursuit(self.agent.game_world.player) * self.pursuit_weight
 
         self.accumulate_force(wall_avoidance)
         self.accumulate_force(obstacle_avoidance)
+        self.accumulate_force(pursuit)
         self.accumulate_force(hide)
         self.accumulate_force(flock)
 
