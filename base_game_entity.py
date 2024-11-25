@@ -21,7 +21,7 @@ class BaseGameEntity:
         self.id = BaseGameEntity.next_valid_id()
         self.type = entity_type
         self.tagged = False
-        self.position = Vector2(position.x, constants.WINDOW_RESOLUTION[1] - position.y)
+        self.position = position
         self.scale = constants.DEFAULT_SCALE
         self.radius = radius
 

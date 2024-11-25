@@ -49,6 +49,7 @@ class SteeringBehaviours:
         self.accumulate_force(pursuit)
         self.accumulate_force(hide)
         self.accumulate_force(flock)
+        # self.accumulate_force(wander)
 
         return self.accumulated_steering_force
 

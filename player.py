@@ -28,7 +28,7 @@ class Player(MovingEntity):
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
         self.rotation = 0.0
-        self.rotation_speed = 180.0
+        self.rotation_speed = 270.0
         self.movement_vec = Vector2(0.0, 0.0)
         self.front = Vector2(0.0, -self.radius)
         self.shoot_cooldown = 0  # Cooldown timer in seconds
