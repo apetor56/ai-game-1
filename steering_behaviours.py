@@ -27,6 +27,12 @@ class SteeringBehaviours:
         self.pursuit_weight = 15.0
         self.hide_weight = 15.0
         self.flock_weight = 1.0
+        self.hiding_timer = 0
+        self.is_hiding = False
+        self.hiding_duration = 7.0
+        self.rest_duration = 5.0
+        self.time_since_last_switch = 0
+
 
     def calculate_steering_force(self):
         self.accumulated_steering_force = Vector2()
@@ -34,7 +40,7 @@ class SteeringBehaviours:
         wall_avoidance = self.wall_avoidance(self.agent.game_world.walls) * self.wall_avoidance_weight
         obstacle_avoidance = self.obstacle_avoidance() * self.obstacle_avoidance_weight
         pursuit = Vector2(0, 0)
-        hide = self.hide(self.agent.game_world.player, self.agent.game_world.obstacles) * self.hide_weight
+        hide = self.hide_with_timing(self.agent.game_world.player, self.agent.game_world.obstacles) * self.hide_weight
         flock = self.flock() * self.flock_weight
         wander = self.wander() * self.wander_weight
 
@@ -228,6 +234,25 @@ class SteeringBehaviours:
             return self.arrive(best_hiding_spot,
                                deceleration=1.0)
         return Vector2()
+
+    def hide_with_timing(self, target, obstacles):
+        self.time_since_last_switch += self.agent.delta_time
+
+        if self.is_hiding:
+            if self.time_since_last_switch >= self.hiding_duration:
+                self.is_hiding = False
+                self.time_since_last_switch = 0
+            else:
+                return self.hide(target, obstacles)
+
+        else:
+            if self.time_since_last_switch >= self.rest_duration:
+                self.is_hiding = True
+                self.time_since_last_switch = 0
+            else:
+                return Vector2(0, 0)
+
+        return Vector2(0, 0)
 
     # Flocking
     def separation(self, neighbors):
