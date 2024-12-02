@@ -1,9 +1,11 @@
-from operator import truth
+from enemy import Enemy
 from game_world import GameWorld
 from moving_entity import MovingEntity
-from base_game_entity import EntityType
+from base_game_entity import EntityType, BaseGameEntity
+from obstacle import Obstacle
 from steering_behaviours import SteeringBehaviours
 from generator import Generator
+from utils import Utils
 import constants
 
 import pygame
@@ -52,25 +54,6 @@ class Player(MovingEntity):
         else:
             self.shooting = False
 
-    def shoot(self):
-        shot_start = self.position
-        shot_direction = self.heading_vec.normalize()  # Ensure the direction is normalized
-        max_shot_length = 800  # Max shot range
-        shot_end = shot_start + shot_direction * max_shot_length
-
-        # Check for obstacle blocks
-        blocked, intersection_point = self.steering_behaviours.is_shot_blocked(shot_start, shot_direction,self.game_world.obstacles)
-        if blocked:
-            shot_end = intersection_point
-        else:
-            blocked, intersection_point = self.steering_behaviours.is_shot_blocked_by_enemy(shot_start, shot_direction,
-                                                                                   self.game_world.enemies)
-            if blocked:
-                shot_end = intersection_point
-                print("enemy shot")
-
-        self.shot_end = shot_end
-
     def update(self, delta_time):
         self.update_rotation(delta_time)
         self.update_movement(delta_time)
@@ -115,3 +98,39 @@ class Player(MovingEntity):
         right = self.front.rotate(240)
 
         return [self.front + self.position, left + self.position, right + self.position]
+
+    def shoot(self):
+        shot_start = self.position
+        shot_direction = self.heading_vec.normalize()
+        max_shot_length = 800
+        shot_end = shot_start + shot_direction * max_shot_length
+
+        entities = self.game_world.obstacles.copy()
+        entities.extend(self.game_world.enemies)
+        blocked, intersection_point, shoot_entity = self.is_shot_blocked(shot_start, shot_direction,
+                                                                   entities)
+        if blocked:
+            shot_end = intersection_point
+            if isinstance(shoot_entity, Enemy):
+                self.game_world.enemies.remove(shoot_entity)
+
+        self.shot_end = shot_end
+
+    @staticmethod
+    def is_shot_blocked(shot_start, shot_dir, entities) -> (bool, Vector2, BaseGameEntity):
+        closest_intersecting_point = constants.MAX_FLOAT_VEC2
+        is_global_intersection = False
+        closest_shoot_entity = None
+
+        for entity in entities:
+            is_intersecting, intersecting_point = Utils.is_line_circle_intersection(shot_start, shot_dir, entity)
+
+            if is_intersecting:
+                is_global_intersection = True
+
+            if intersecting_point is not None \
+                and shot_start.distance_to(intersecting_point) < shot_start.distance_to(closest_intersecting_point):
+                closest_intersecting_point = intersecting_point
+                closest_shoot_entity = entity
+
+        return is_global_intersection, closest_intersecting_point, closest_shoot_entity

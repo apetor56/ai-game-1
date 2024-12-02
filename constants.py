@@ -1,5 +1,3 @@
-from pickle import FLOAT
-
 import pygame
 from pygame import Vector2
 
@@ -35,3 +33,4 @@ class Deceleration:
     FAST = 1.0
 
 RESTITUTION_COEFFICIENT = 0.8
+MAX_FLOAT_VEC2 = Vector2(float('inf'), float('inf'))

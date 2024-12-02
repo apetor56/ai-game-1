@@ -2,6 +2,9 @@ import math
 
 from pygame import Vector2
 
+from base_game_entity import BaseGameEntity
+
+
 class Utils:
     @staticmethod
     def point_to_world_space(local_point: Vector2, heading: Vector2, side: Vector2, position: Vector2) -> Vector2:
@@ -49,6 +52,37 @@ class Utils:
 
         transformed_vec = mat_transform.transform_vector_2d(trans_vec)
         return transformed_vec
+
+    @staticmethod
+    def is_line_circle_intersection(line_point, line_dir, entity) -> (bool, Vector2):
+        circle_center = entity.position
+        circle_radius = entity.radius
+
+        to_center = line_point - circle_center
+
+        a = line_dir.dot(line_dir)
+        b = 2 * line_dir.dot(to_center)
+        c = to_center.dot(to_center) - circle_radius ** 2
+        discriminant = b ** 2 - 4 * a * c
+
+        if discriminant < 0:
+            return False, None
+
+        sqrt_discriminant = discriminant ** 0.5
+        t1 = (-b - sqrt_discriminant) / (2 * a)
+        t2 = (-b + sqrt_discriminant) / (2 * a)
+
+        intersection_points = []
+        if t1 >= 0:
+            intersection_points.append(line_point + t1 * line_dir)
+        if t2 >= 0:
+            intersection_points.append(line_point + t2 * line_dir)
+
+        if intersection_points:
+            closest_intersection = min(intersection_points, key = lambda p: (p - line_point).length())
+            return True, closest_intersection
+
+        return False, None
 
 class C2DMatrix:
     def __init__(self):
