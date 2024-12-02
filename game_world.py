@@ -1,8 +1,19 @@
+import pygame
+
 import constants
 
 from pygame import Surface, SurfaceType, Vector2
+
+from generator import Generator
 from obstacle import Obstacle
 from wall import Wall
+
+from enum import Enum
+
+class State(Enum):
+    in_game = 0,
+    win = 1,
+    defeat = 2
 
 class GameWorld:
     def __init__(self,
@@ -28,29 +39,40 @@ class GameWorld:
         self.walls = []
         self.generate_obstacles()
         self.create_walls()
+        self.state = State.in_game
 
     def generate_obstacles(self):
 
         obstacle_positions = [
-            Vector2(400, 300),
-            Vector2(200, 150),
-            Vector2(600, 150),
-            Vector2(600, 450)
+            Vector2(150, 560),
+            Vector2(300, 230),
+            Vector2(500, 130),
+            Vector2(700, 330),
+            Vector2(900, 530),
+            Vector2(1100, 430),
+            Vector2(400, 630),
+            Vector2(600, 530),
+            Vector2(1150, 100)
         ]
         for pos in obstacle_positions:
-            self.obstacles.append(Obstacle(pos, radius=60, color=constants.GRAY))
+            self.obstacles.append(Obstacle(pos, radius=Generator.random_float(40, 70), color=constants.GRAY))
 
     def process_input(self):
         self.player.process_input()
 
     def update(self, delta_time: float):
-        self.player.update(delta_time)
-        self.handle_wall_collisions(self.player)
+        if self.state == State.in_game:
+            self.player.update(delta_time)
+            self.handle_wall_collisions(self.player)
 
-        for enemy in self.enemies:
-            enemy.update(delta_time)
+            for enemy in self.enemies:
+                enemy.update(delta_time)
 
-        self.handle_entity_collisions()
+            if len(self.enemies) == 0:
+                self.state = State.win
+
+            self.handle_entity_collisions()
+
 
     def render(self, render_target: Surface | SurfaceType):
         self.player.render(render_target)
@@ -58,6 +80,18 @@ class GameWorld:
             enemy.render(render_target)
         for obstacle in self.obstacles:
             obstacle.render(render_target)
+
+        if self.state == State.defeat:
+            game_over_font = pygame.font.Font(None, 120)
+            game_over_text = game_over_font.render("GAME OVER", True, constants.RED)
+            game_over_rect = game_over_text.get_rect(center=(constants.WINDOW_RESOLUTION[0] // 2, constants.WINDOW_RESOLUTION[1] // 2 - 50))
+            self.render_target.blit(game_over_text, game_over_rect)
+
+        if self.state == State.win:
+            game_over_font = pygame.font.Font(None, 120)
+            game_over_text = game_over_font.render("WIN", True, constants.GREEN)
+            game_over_rect = game_over_text.get_rect(center=(constants.WINDOW_RESOLUTION[0] // 2, constants.WINDOW_RESOLUTION[1] // 2 - 50))
+            self.render_target.blit(game_over_text, game_over_rect)
 
     @staticmethod
     def handle_wall_collisions(entity):
@@ -97,6 +131,12 @@ class GameWorld:
         min_distance = entity1.radius + entity2.radius
 
         if distance < min_distance:
+            from player import Player
+            from enemy import Enemy
+            if isinstance(entity1, Player) and isinstance(entity2, Enemy):
+                self.state = State.defeat
+                return
+
             overlap = min_distance - distance
             collision_normal = (entity2.position - entity1.position).normalize()
             if stationary:

@@ -2,7 +2,6 @@ from enemy import Enemy
 from game_world import GameWorld
 from moving_entity import MovingEntity
 from base_game_entity import EntityType, BaseGameEntity
-from obstacle import Obstacle
 from steering_behaviours import SteeringBehaviours
 from generator import Generator
 from utils import Utils
@@ -30,7 +29,7 @@ class Player(MovingEntity):
         self.steering_behaviours = SteeringBehaviours(self)
         self.max_speed = max_speed
         self.rotation = 0.0
-        self.rotation_speed = 270.0
+        self.rotation_speed = 360.0
         self.movement_vec = Vector2(0.0, 0.0)
         self.front = Vector2(0.0, -self.radius)
         self.shoot_cooldown = 0  # Cooldown timer in seconds
@@ -50,7 +49,7 @@ class Player(MovingEntity):
         if keys[pygame.K_SPACE] and self.shoot_cooldown <= 0:
             self.shooting = True
             self.shoot()
-            self.shoot_cooldown = 0.5  # Cooldown of 0.5 seconds
+            self.shoot_cooldown = 0.3
         else:
             self.shooting = False
 
@@ -62,7 +61,6 @@ class Player(MovingEntity):
             self.shoot_cooldown -= delta_time
 
     def render(self, render_target : SurfaceType | Surface):
-        pygame.draw.circle(render_target, self.color, self.position, self.radius, width = 1)
         pygame.draw.polygon(render_target, constants.GREEN, self.get_triangle_vertices())
 
         if self.shooting and self.shot_end:
@@ -102,7 +100,7 @@ class Player(MovingEntity):
     def shoot(self):
         shot_start = self.position
         shot_direction = self.heading_vec.normalize()
-        max_shot_length = 800
+        max_shot_length = 1500
         shot_end = shot_start + shot_direction * max_shot_length
 
         entities = self.game_world.obstacles.copy()

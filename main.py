@@ -1,4 +1,5 @@
 from game_world import GameWorld
+from game_world import State
 import constants
 
 import pygame
@@ -18,6 +19,11 @@ def main():
         render_target.fill(constants.BLACK_CLEAR_COLOR)
 
         delta_time = clock.tick(60) / 1000
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r] and game_world.state != State.in_game:
+            game_world = GameWorld(render_target)
+
         game_world.process_input()
         game_world.update(delta_time)
         game_world.render(render_target)

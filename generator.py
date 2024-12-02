@@ -15,3 +15,7 @@ class Generator:
         x: float = random.uniform(-1, 1)
         y: float = random.uniform(-1, 1)
         return Vector2(x, y).normalize()
+
+    @staticmethod
+    def random_float(min_value, max_value):
+        return random.uniform(min_value, max_value)

@@ -42,9 +42,8 @@ class SteeringBehaviours:
         pursuit = Vector2(0, 0)
         hide = self.hide_with_timing(self.agent.game_world.player, self.agent.game_world.obstacles) * self.hide_weight
         flock = self.flock() * self.flock_weight
-        wander = self.wander() * self.wander_weight
 
-        min_group_size = 5
+        min_group_size = 4
         group_radius = 100
         if self.check_group(self.agent.game_world.enemies, self.agent.position, min_group_size, group_radius):
             hide = Vector2(0, 0)
@@ -55,7 +54,6 @@ class SteeringBehaviours:
         self.accumulate_force(pursuit)
         self.accumulate_force(hide)
         self.accumulate_force(flock)
-        # self.accumulate_force(wander)
 
         return self.accumulated_steering_force
 

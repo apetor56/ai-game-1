@@ -1,4 +1,3 @@
-import time
 from game_world import GameWorld
 from moving_entity import MovingEntity
 from base_game_entity import EntityType
